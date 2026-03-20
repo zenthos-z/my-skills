@@ -161,7 +161,9 @@ async function convertToImage(browser, code, outputPath, outputFormat) {
 
     if (outputFormat === 'svg') {
       const svgContent = await page.evaluate(el => el.outerHTML, svgElement);
-      fs.writeFileSync(outputPath, svgContent);
+      // Fix non-self-closing <br> tags which are invalid in XML/SVG
+      const fixedContent = svgContent.replace(/<br>/g, '<br/>');
+      fs.writeFileSync(outputPath, fixedContent);
     } else {
       // PNG screenshot
       await svgElement.screenshot({
