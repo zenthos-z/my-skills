@@ -135,9 +135,6 @@ const htmlTemplate = (code) => `
 </head>
 <body>
   <div class="mermaid">${code}</div>
-  <script>
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
-  </script>
 </body>
 </html>
 `;
@@ -149,6 +146,10 @@ async function convertToImage(browser, code, outputPath, outputFormat) {
     page = await browser.newPage();
     await page.setContent(htmlTemplate(code), { waitUntil: 'domcontentloaded' });
     await page.addScriptTag({ path: localMermaidPath });
+    await page.evaluate(() => {
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      return mermaid.run();
+    });
 
     // Wait for mermaid to render
     await page.waitForSelector('.mermaid svg', { timeout: 10000 });
