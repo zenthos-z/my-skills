@@ -1,5 +1,7 @@
 # mermaid-pro
 
+[English](./README.md) | [中文](./README.zh.md)
+
 A Claude Code skill for generating professional, visually appealing Mermaid diagrams with consistent styling, built-in syntax validation, and image export scripts.
 
 ## Features
