@@ -1,0 +1,32 @@
+# 敏感配置（本地配置，包含群ID、人名等）
+*.local.json
+*.local.md
+.env
+.env.local
+
+# 运行时数据
+temp/
+memory/
+reports/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Shared 文件（用户定制内容，从模板生成）
+references/shared/topic_hierarchy.md
