@@ -2,6 +2,9 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-blue)](https://claude.ai/code)
 
+![Uploading 日报_20260329_194756_02.png…]()
+
+
 从微信群聊数据自动生成日报、周报、资源汇总和议题追踪报告。基于 WeFlow API 获取聊天数据，Claude 完成分析和报告生成。
 
 核心能力：日报 / 周报 / 资源提取 / 工程问题归纳 / 议题持续追踪 / 配图生成
