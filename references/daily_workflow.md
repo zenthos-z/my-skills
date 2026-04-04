@@ -66,89 +66,42 @@ python scripts/chat_context.py --date <YYYY-MM-DD>
 
 **3b. 创建临时目录**：`{tempDir}/image_desc_YYYYMMDD/`
 
-**3c. 分批分配 subagent**：将图片路径列表均分给至少 4 个 subagent，在同一条消息中并行 spawn 所有 subagent。
+**3c. 分批分配图片分析 Agent**：先读取 `agents/ImageAnalyzer.md` 获取完整的系统提示和描述策略。然后将图片路径列表均分给 4-8 个 general-purpose agent，在同一条消息中并行 spawn 所有 agent（foreground 模式，不使用 `run_in_background`，主会话等待全部完成后继续）。
 
 **分组规则**：
-- 总图片数 ≤ 4：每个 subagent 1 张，启动 N 个 subagent
-- 总图片数 5-8：启动 4 个 subagent，均分图片
-- 总图片数 9-20：启动 4 个 subagent，每个处理约 N/4 张
-- 总图片数 > 20：启动 6-8 个 subagent，每个不超过 5 张
+- 总图片数 ≤ 4：每个 agent 1 张，启动 N 个 agent
+- 总图片数 5-8：启动 4 个 agent，均分图片
+- 总图片数 9-20：启动 4 个 agent，每个处理约 N/4 张
+- 总图片数 > 20：启动 6-8 个 agent，每个不超过 5 张
 
-**⚠️ 关键：等待 subagent 完成的方式**
+每个 agent 的调用方式：
 
-所有 subagent **必须**使用 `run_in_background: true` 启动。启动后：
-
-1. **禁止**使用 `sleep` + 文件检查轮询等待结果
-2. **正确做法**：subagent 完成时会自动推送 `<task-notification>` 通知，收到通知后检查输出文件是否生成
-3. 在等待期间，可继续执行不依赖图片结果的工作（如 Step 4 读取共享内容和记忆文档）
-4. 若超过 10 分钟仍未收到通知，再检查输出文件或向用户报告
-
-**错误示例** ❌:
 ```
-sleep 30 && ls -la "temp/image_desc_YYYYMMDD/"  # 轮询
-```
+Agent(
+  subagent_type="general-purpose",
+  description="Analyze batch {N} images",
+  prompt="""
+{ImageAnalyzer.md 的完整系统提示内容}
 
-**正确示例** ✅:
-```
-// 启动 4 个 subagent (run_in_background: true)
-// 立即继续 Step 4a/4b
-// 收到 <task-notification> 后进入 3d
-```
+---
+## 当前任务
 
-每个 subagent 的任务指令：
-```
-你是一个图片描述生成器。请对以下每张图片调用 `mcp__zai-mcp-server__analyze_image`：
-- `image_source`: 本地文件路径（去掉 file:/// 前缀）
-- `prompt`: 使用以下分类描述策略：
-
-先判断图片属于哪种类型，再按对应策略描述：
-
-**纯文本截图**（聊天记录、代码、文档、错误信息等）：
-逐字还原所有可见文字。如有代码则保留代码格式。标注截图来源（如"VS Code 终端截图"、"微信聊天记录"）。
-
-**操作界面截图**（App 界面、Web 页面、设置面板、工具界面等）：
-描述界面布局和主要元素，还原界面中的所有文字内容（按钮、菜单、输入框等）。
-
-**知识卡片 / 信息图**（图文混排的说明图、流程图、思维导图、知识总结等）：
-还原所有文字内容，同时说明图片的逻辑结构（如"从左到右分为3个阶段"、"上方是标题，下方是分步骤说明"）。
-
-**海报 / 公告**（活动海报、课程通知、宣传图等）：
-还原所有文字内容（标题、时间、地点、联系方式等），简述视觉布局。
-
-**环境照片**（会议室、活动现场、白板、屏幕拍摄等）：
-简述环境场景和关键元素，重点提取照片中可见的文字信息。
-
-**表情包 / 梗图**：
-简述图片内容和传达的情绪/含义，如有文字则还原。
-
-**其他类型**：
-先说明图片性质，再还原关键内容和文字信息。
-
-所有图片可并行调用。
-
-**⚠️ 结果写入方式（必须遵守）**：
-不要手写 JSON！所有图片分析完成后，使用 Bash 工具执行 Python 脚本写入 JSON 文件，确保特殊字符被正确转义：
-
-```bash
-python -c "
-import json, pathlib
-data = {
-    'file:///path/to/image1.jpg': '图片1的描述',
-    'file:///path/to/image2.jpg': '图片2的描述',
-}
-pathlib.Path('{tempDir}/image_desc_YYYYMMDD/batch_{N}.json').write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
-print(f'写入 {len(data)} 条描述')
-"
+batchIndex: {N}
+outputDir: {tempDir 的绝对路径}/image_desc_YYYYMMDD
+images:
+{batch_images_list 的绝对路径}
+"""
+)
 ```
 
-其中 `data` 字典的 key 为 `file:///原始路径`（保留 file:/// 前缀），value 为描述文本。
-```
+其中：
+- 系统提示部分：将 `agents/ImageAnalyzer.md` 中 `---` frontmatter 之后的全部正文内容原样嵌入
+- **`outputDir` 和 `images` 路径都必须为绝对路径**（如 `G:\code_library\qunribao\temp\image_desc_20260404`），避免 agent 巡作目录与主会话不一致导致文件写入错误位置
+- `{batch_images_list}` 是分配给该批次的图片路径，每行一个（保留 `file:///` 前缀）
 
-**3d. 确认所有 subagent 已完成后执行替换脚本**：
+**3d. 全部 agent 完成后执行替换脚本**：
 
-检查 `{tempDir}/image_desc_YYYYMMDD/` 下是否所有 `batch_N.json` 文件都已生成（文件数 = subagent 数量）。若部分文件缺失，等待对应的 `<task-notification>` 通知后再继续。
-
-全部就绪后执行替换：
+所有 agent 返回后，确认 `{tempDir}/image_desc_YYYYMMDD/` 下已生成所有 `batch_N.json` 文件，然后执行替换：
 ```bash
 python scripts/replace_images.py \
   --context {tempDir}/chat_context_YYYYMMDD.md \

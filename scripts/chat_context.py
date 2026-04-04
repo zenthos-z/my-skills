@@ -102,10 +102,17 @@ class ChatContextGenerator:
             export_media=export_media,
         )
 
-        # 转换为标准格式
+        # 转换为标准格式（确保图片能下载到本地）
+        media_export_path = None
+        if export_media:
+            media_dir = Path(self.config.get("tempDir", "temp")) / "media"
+            media_dir.mkdir(parents=True, exist_ok=True)
+            media_export_path = str(media_dir)
+
         return self.client.convert_to_standard_format(
             messages,
-            export_media=export_media
+            export_media=export_media,
+            media_export_path=media_export_path
         )
 
     def get_group_info(self) -> Dict[str, Any]:
@@ -391,9 +398,12 @@ class ChatContextGenerator:
                 media_path = f"file:///{media_path}"
             lines.append(media_path)
         elif msg_type in [3, 47] or (msg_type == 1 and not content.strip()):
-            # 图片/表情但没有路径
+            # 图片/表情
             if media_path:
                 lines.append(f"[图片|{media_path}]")
+            elif msg.get("media_url"):
+                print(f"警告: 图片未能下载到本地: {msg.get('media_url', '')[:80]}")
+                lines.append(f"[图片|{msg.get('media_url')}]")
             else:
                 lines.append("[图片]" if msg_type == 3 else "[表情]")
         elif content:

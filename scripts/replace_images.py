@@ -19,6 +19,12 @@ import re
 import argparse
 import os
 import glob
+import sys
+
+# Fix Windows encoding issues
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 
 def main():
@@ -28,7 +34,7 @@ def main():
     parser.add_argument('--output', help='输出文件路径（默认覆盖 context 文件）')
     args = parser.parse_args()
 
-    # 1. 合并所有 batch JSON 文件
+    # 1. 合并所有 batch JSON 文件，并统一 key 为无 file:/// 前缀的本地路径
     descriptions = {}
     json_files = sorted(glob.glob(os.path.join(args.descriptions_dir, '*.json')))
 
@@ -36,11 +42,20 @@ def main():
         print(f"警告: 未找到 JSON 文件 ({args.descriptions_dir}/*.json)")
         return
 
+    def normalize_path(p):
+        """去除 file:/// 前缀，统一路径分隔符"""
+        if p.startswith('file:///'):
+            p = p[8:]
+        elif p.startswith('file://'):
+            p = p[7:]
+        return os.path.normpath(p)
+
     for json_file in json_files:
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 batch = json.load(f)
-                descriptions.update(batch)
+                for k, v in batch.items():
+                    descriptions[normalize_path(k)] = v
         except (json.JSONDecodeError, IOError) as e:
             print(f"警告: 跳过无效文件 {json_file}: {e}")
 
@@ -61,7 +76,7 @@ def main():
         nonlocal matched, replaced
         matched += 1
         prefix = match.group(1) or ''
-        path = match.group(2)
+        path = normalize_path(match.group(2))
         desc = descriptions.get(path)
         if desc:
             replaced += 1
