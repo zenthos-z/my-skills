@@ -65,9 +65,9 @@ def main():
     with open(args.context, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # 3. 替换所有 [图片|path] 占位符
-    # 匹配 (可能有 "> " 前缀)[图片|path]
-    pattern = r'^(>\s*)?\[图片\|([^\]]+)\]'
+    # 3. 替换所有 [图片|path] 和 [表情|path] 占位符
+    # 匹配 (可能有 "> " 前缀)[图片|path] 或 [表情|path]
+    pattern = r'^(>\s*)?\[(?:图片|表情)\|([^\]]+)\]'
 
     matched = 0
     replaced = 0
@@ -78,11 +78,14 @@ def main():
         prefix = match.group(1) or ''
         path = normalize_path(match.group(2))
         desc = descriptions.get(path)
+        full_text = match.group(0)
+        is_emoji = full_text.startswith("[表情") or full_text.startswith("> [表情")
         if desc:
             replaced += 1
-            return f"{prefix}[图片描述: {desc}]"
+            label = "表情描述" if is_emoji else "图片描述"
+            return f"{prefix}[{label}: {desc}]"
         else:
-            return f"{prefix}[图片]"
+            return match.group(0)  # 保留原始标签，不丢弃路径
 
     content = re.sub(pattern, replace_image, content, flags=re.MULTILINE)
 

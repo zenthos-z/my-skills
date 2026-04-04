@@ -243,7 +243,7 @@ AskUserQuestion (3 questions):
 
 ---
 
-### Step 4c/5：其他共享文件说明
+### Step 4c/6：其他共享文件说明
 
 简短告知用户，不需要交互操作：
 
@@ -255,6 +255,53 @@ AskUserQuestion (3 questions):
 
 这些文件位于 references/shared/ 目录，可随时编辑。
 ```
+
+---
+
+### Step 5/6：图片识别 API 配置
+
+> describe 模式使用 Vision API 分析群聊中的图片内容，生成文字描述。
+
+先告知用户：
+```
+💡 图片识别配置说明
+
+describe 模式使用 Vision API 分析群聊中的图片内容，生成文字描述。
+不配置则使用默认值（智谱 GLM-4.6V-Flash，使用当前 Claude Code 的 API Key）。
+```
+
+```
+AskUserQuestion (1 question):
+  Q1: "是否配置图片识别 API？"
+      选项:
+        - "使用默认配置（智谱 GLM-4.6V-Flash）" ← 推荐
+        - "使用 OpenAI 兼容接口（GPT-4o / Qwen-VL 等）"
+        - "暂时跳过"
+      类型: 选择题
+
+  → 选"使用 OpenAI 兼容接口":
+
+  AskUserQuestion (3 questions):
+    Q2: "API Base URL？"
+        示例提示: "如 https://api.openai.com/v1 或 https://dashscope.aliyuncs.com/compatible-mode/v1"
+        类型: 填空题
+
+    Q3: "Vision 模型名称？"
+        示例提示: "如 gpt-4o-mini、qwen-vl-plus"
+        类型: 填空题
+
+    Q4: "API Key 环境变量名？"
+        示例提示: "如 OPENAI_API_KEY、DASHSCOPE_API_KEY"
+        类型: 填空题
+
+  → 选"暂时跳过": vision 配置为空，describe_images.py 使用内置默认值
+```
+
+**收集结果**：
+- `vision.baseUrl`: 智谱默认 / 用户自定义
+- `vision.model`: glm-4.6v-flash / 用户自定义
+- `vision.apiKeyEnv`: ANTHROPIC_AUTH_TOKEN / 用户自定义
+- `vision.concurrency`: 默认 10
 
 ---
 
@@ -276,6 +323,7 @@ AskUserQuestion (3 questions):
 | 报告目录 | G:\code_library\qunribao\reports |
 | 议题 | 使用默认模板 |
 | 议题知识库 | ✅ 已填写 / ⚠️ 空模板待补充 |
+| 图片识别 | 智谱 GLM-4.6V-Flash（默认）/ {自定义模型} |
 
 ⚠️ 共享文件状态：
 - references/shared/topic_hierarchy.md: ✅ 已生成 / ⚠️ 空模板，需手动补充议题详细描述
@@ -322,6 +370,12 @@ AskUserQuestion:
 ## 工程分组
 - {group}
 ...
+
+## 图片识别 API
+- baseUrl: {url}
+- model: {model}
+- apiKeyEnv: {env_var}
+- concurrency: {N}
 ```
 
 写入后告知用户：
@@ -354,6 +408,7 @@ AskUserQuestion:
     - "人员名单（管理者 / 班长）"
     - "输出目录"
     - "议题配置"
+    - "图片识别 API"
     - "查看当前配置"
 ```
 

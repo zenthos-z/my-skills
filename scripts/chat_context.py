@@ -7,6 +7,7 @@
 
 import sys
 import re
+import html
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -238,19 +239,43 @@ class ChatContextGenerator:
         else:
             print(f"   获取到 {len(messages)} 条消息")
 
-        # 按时间戳升序排序（从早到晚）
-        messages.sort(key=lambda m: m.get("timestamp", 0))
+        # 按时间戳升序排序（从早到晚），相同时间按 ID 升序（小号在前）
+        messages.sort(key=lambda m: (
+            m.get("timestamp", 0),
+            int(m.get("localId") or m.get("id") or 0)
+        ))
 
-        # 建立 server_id -> local_id 映射（用于引用消息查找）
-        self._server_to_local_id: Dict[str, str] = {}
+        # 建立 server_id -> 消息缓存（用于引用消息查找与内容反查）
+        self._messages_by_server_id: Dict[str, Dict[str, Any]] = {}
         for m in messages:
             server_id = m.get("serverId") or m.get("server_id")
-            local_id = m.get("localId") or m.get("id")
-            if server_id and local_id:
-                self._server_to_local_id[str(server_id)] = str(local_id)
+            if server_id:
+                self._messages_by_server_id[str(server_id)] = m
+
+        # 风格：跨日期引用检测与获取
+        cross_date_refs = self._fetch_cross_date_refs(messages, start, end)
 
         # 构建文档
         lines = []
+
+        # 跨日期引用区块（排在消息列表之前）
+        if cross_date_refs:
+            # 收集引用来源日期
+            ref_dates = set()
+            for ref_msg in cross_date_refs.values():
+                ts = ref_msg.get("timestamp", 0)
+                if isinstance(ts, (int, float)) and ts > 0:
+                    ref_dates.add(datetime.fromtimestamp(ts).strftime(DATE_FMT_CLI))
+            dates_str = ", ".join(sorted(ref_dates))
+            lines.append(f"## Referenced Messages (from {dates_str})")
+            lines.append("")
+            for ref_msg in cross_date_refs.values():
+                ref_formatted = self._format_message(ref_msg, inline_images)
+                if ref_formatted:
+                    lines.append(ref_formatted)
+                    lines.append("")
+            lines.append("---")
+            lines.append("")
 
         # 文档头部
         lines.append(f"# Chat Report: {group_info.get('name', 'Unknown')}")
@@ -302,7 +327,7 @@ class ChatContextGenerator:
             for msg in messages:
                 media_path = msg.get("media_local_path", "")
                 media_type = msg.get("media_type", "")
-                if media_path and media_type == "image":
+                if media_path and media_type in ("image", "emoji"):
                     if not media_path.startswith("file:///"):
                         media_path = f"file:///{media_path}"
                     image_paths.append(media_path)
@@ -342,9 +367,9 @@ class ChatContextGenerator:
         if len(sender) > 20:
             sender = sender[:17] + "..."
 
-        # 消息头部：添加 local ID
-        local_id = msg.get("localId") or msg.get("id", "")
-        lines = [f"### {time_str} | {sender} | ID:{local_id}"]
+        # 消息头部：统一使用 serverId，无 serverId 时回退到 localId
+        msg_id = msg.get("serverId") or msg.get("server_id") or msg.get("localId") or msg.get("id", "")
+        lines = [f"### {time_str} | {sender} | svrid:{msg_id}"]
 
         # 消息内容处理
         msg_type = msg.get("type", 0)
@@ -359,8 +384,63 @@ class ChatContextGenerator:
         if self.parse_link_cards and '<refermsg>' in raw_content:
             quote_info = self.client.parse_quote(raw_content)
             if quote_info:
-                formatted = self._format_quote(quote_info, content)
-                lines.append(formatted)
+                # 1a. 构建引用行
+                lines.append(self._build_quote_ref(quote_info))
+
+                # 空行分隔引用行和正文（防止 markdown 将正文吸入引用块）
+                lines.append("")
+
+                # 1b. 检测回复中的文件附件
+                has_file = False
+                if '<fileupload>' in raw_content:
+                    has_file = True
+                elif '<appattach>' in raw_content:
+                    has_file = bool(re.search(r'<attachid>[^<]+</attachid>', raw_content) or
+                                    re.search(r'<filename>[^<]+</filename>', raw_content))
+                if has_file:
+                    file_info = self.client.parse_file(raw_content)
+                    if file_info:
+                        lines.append(self._format_file(file_info))
+                        return "\n".join(lines)
+
+                # 1c. 检测回复中的图片/表情
+                if media_path and media_type == "image":
+                    if inline_images:
+                        if not media_path.startswith("file:///"):
+                            media_path = f"file:///{media_path}"
+                        lines.append(media_path)
+                    else:
+                        lines.append(f"[图片|{media_path}]")
+                    return "\n".join(lines)
+                if media_path and media_type == "emoji":
+                    lines.append(f"[表情|{media_path}]")
+                    return "\n".join(lines)
+
+                # 1d. 纯文本回复 — 多源提取回复文本
+                reply_text = ""
+                quoted_text = quote_info.get("content") or ""
+
+                # 源1: 从 raw_content 提取 <title>
+                title_match = re.search(r'<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', raw_content)
+                if title_match:
+                    candidate = html.unescape(title_match.group(1).strip())
+                    if candidate and candidate != quoted_text:
+                        reply_text = candidate
+
+                # 源2: fallback 到 content 字段
+                if not reply_text:
+                    fallback = (content or "").strip()
+                    if fallback and fallback != quoted_text:
+                        # 处理合并内容：content 可能以 quoted_text 开头
+                        if quoted_text and fallback.startswith(quoted_text):
+                            remainder = fallback[len(quoted_text):].strip()
+                            if remainder:
+                                reply_text = remainder
+                        else:
+                            reply_text = fallback
+
+                if reply_text:
+                    lines.append(reply_text)
                 return "\n".join(lines)
 
         # 2. 链接卡片（在文件之前判断，避免链接被误判为文件）
@@ -400,7 +480,8 @@ class ChatContextGenerator:
         elif msg_type in [3, 47] or (msg_type == 1 and not content.strip()):
             # 图片/表情
             if media_path:
-                lines.append(f"[图片|{media_path}]")
+                tag = "表情" if msg_type == 47 else "图片"
+                lines.append(f"[{tag}|{media_path}]")
             elif msg.get("media_url"):
                 print(f"警告: 图片未能下载到本地: {msg.get('media_url', '')[:80]}")
                 lines.append(f"[图片|{msg.get('media_url')}]")
@@ -416,30 +497,158 @@ class ChatContextGenerator:
 
         return "\n".join(lines)
 
-    def _format_quote(self, quote_info: Dict[str, Any], current_content: str) -> str:
-        """格式化引用消息
+    def _fetch_cross_date_refs(
+        self,
+        messages: List[Dict[str, Any]],
+        start: datetime,
+        end: datetime,
+    ) -> Dict[str, Dict[str, Any]]:
+        """预扫描跨日引用，获取被引用消息
 
-        输出格式示例:
-        > 💬 引用 ID:1234
-        当前消息内容
+        Args:
+            messages: 当天消息列表
+            start: 查询开始时间
+            end: 查询结束时间
+
+        Returns:
+            {ref_id: message_dict} 跨日引用消息映射
         """
-        lines = []
+        cross_date_refs: Dict[str, Dict[str, Any]] = {}
+        seen_create_times: set = set()
 
-        # 获取被引用消息的 server ID，并查找对应的 local ID
+        for msg in messages:
+            raw_content = msg.get("raw_content") or msg.get("rawContent") or ""
+            if '<refermsg>' not in raw_content:
+                continue
+
+            quote_info = self.client.parse_quote(raw_content)
+            if not quote_info:
+                continue
+
+            svr_id = quote_info.get("server_msg_id", "")
+            # 如果在当天缓存中（通过 serverId 或 create_time 匹配），不是跨日引用
+            if svr_id and str(svr_id) in self._messages_by_server_id:
+                continue
+
+            create_time = quote_info.get("create_time")
+            if not create_time:
+                continue
+
+            # serverId 精度丢失时，通过 create_time 在缓存中查找
+            found_in_cache = False
+            for cached_msg in self._messages_by_server_id.values():
+                cached_ts = cached_msg.get("timestamp", 0)
+                if isinstance(cached_ts, (int, float)) and abs(cached_ts - create_time) < 5:
+                    found_in_cache = True
+                    break
+            if found_in_cache:
+                continue
+
+            # 避免重复获取同一时间戳的消息
+            if create_time in seen_create_times:
+                continue
+            seen_create_times.add(create_time)
+
+            # 判断是否为跨日引用
+            ref_dt = datetime.fromtimestamp(create_time)
+            day_start = datetime.combine(ref_dt.date(), datetime.min.time())
+            day_end = datetime.combine(ref_dt.date(), datetime.max.time().replace(microsecond=0))
+
+            # 如果引用的消息日期就在当前查询范围内，不是跨日
+            if day_start >= start and day_end <= end:
+                continue
+
+            # 获取跨日消息
+            try:
+                ref_messages = self.get_messages(start=day_start, end=day_end, export_media=False)
+                # 通过 create_time 精确匹配
+                for ref_msg in ref_messages:
+                    ref_ts = ref_msg.get("timestamp", 0)
+                    if isinstance(ref_ts, (int, float)) and abs(ref_ts - create_time) < 5:
+                        ref_id = f"REF-{len(cross_date_refs) + 1}"
+                        cross_date_refs[ref_id] = ref_msg
+                        # 同时加入缓存，这样 _build_quote_ref 能找到它
+                        ref_server_id = str(ref_msg.get("serverId") or ref_msg.get("server_id") or "")
+                        if ref_server_id:
+                            self._messages_by_server_id[ref_server_id] = ref_msg
+                        # 别名缓存：用 XML 中的原始 svrid 映射到该消息
+                        if svr_id and str(svr_id) != ref_server_id:
+                            self._messages_by_server_id[str(svr_id)] = ref_msg
+                        break
+            except Exception as e:
+                print(f"  ⚠️ 获取跨日引用失败 (create_time={create_time}): {e}")
+
+        if cross_date_refs:
+            print(f"   发现 {len(cross_date_refs)} 条跨日引用消息")
+
+        return cross_date_refs
+
+    def _build_quote_ref(self, quote_info: Dict[str, Any]) -> str:
+        """构建引用行（显示被引用者+20字预览+svrid）
+
+        输出格式: > 💬 引用 张三: 前20字预览... (svrid:9210117274123674000)
+        """
         svr_id = quote_info.get("server_msg_id", "")
+        quoted_sender = quote_info.get("display_name", "")
+        quoted_content = quote_info.get("content", "")
+        resolved_svr_id = ""  # 最终显示给用户的 svrid（取自 API）
+
+        need_content = not quoted_content
+        need_sender = not quoted_sender
+
+        # 始终查缓存：即使 XML 已有内容/发送者，也需要获取 API 的 serverId
+        ref_msg = None
         if svr_id:
-            local_id = self._server_to_local_id.get(str(svr_id), "unknown")
-        else:
-            local_id = "unknown"
+            ref_msg = self._messages_by_server_id.get(str(svr_id))
 
-        # 引用信息放在 markdown 引用块中
-        lines.append(f"> 💬 引用 ID:{local_id}")
+        # 策略2: create_time 匹配（兜底，解决 serverId 精度丢失）
+        if ref_msg is None:
+            create_time = quote_info.get("create_time")
+            if create_time:
+                for cached_msg in self._messages_by_server_id.values():
+                    cached_ts = cached_msg.get("timestamp", 0)
+                    if isinstance(cached_ts, (int, float)) and abs(cached_ts - create_time) < 5:
+                        ref_msg = cached_msg
+                        # 别名缓存：下次用 XML svrid 直接命中
+                        if svr_id:
+                            self._messages_by_server_id[str(svr_id)] = cached_msg
+                        break
 
-        # 当前消息内容（正常文本，不在引用块中）
-        if current_content and current_content.strip():
-            lines.append(current_content.strip())
+        if ref_msg:
+            if need_sender:
+                ref_sender_wxid = ref_msg.get("sender") or ref_msg.get("senderName", "")
+                if ref_sender_wxid:
+                    quoted_sender = self._get_sender_display_name(ref_sender_wxid)
+            if need_content:
+                ref_type = ref_msg.get("type", 0)
+                ref_media_type = ref_msg.get("media_type", "")
+                ref_content = ref_msg.get("content", "")
+                if ref_media_type == "image" or ref_type == 3:
+                    quoted_content = "[图片]"
+                elif ref_media_type == "emoji" or ref_type == 47:
+                    quoted_content = "[表情]"
+                elif ref_content:
+                    quoted_content = ref_content
+            # 取 API 的 serverId 用于显示（确保与消息头一致）
+            resolved_svr_id = str(ref_msg.get("serverId") or ref_msg.get("server_id") or "")
 
-        return "\n".join(lines)
+        # 构建引用行
+        ref = "> 💬 引用"
+        if quoted_sender:
+            ref += f" {quoted_sender}"
+        if quoted_content:
+            flat = quoted_content.replace("\n", " ").replace("\r", "")
+            preview = flat if len(flat) <= 20 else flat[:17] + "..."
+            ref += f": {preview}"
+        elif not ref_msg:
+            ref += " [引用消息未找到]"
+
+        # 始终显示 svrid
+        display_id = resolved_svr_id or (str(svr_id) if svr_id else "")
+        if display_id:
+            ref += f" (svrid:{display_id})"
+
+        return ref
 
     def _format_file(self, file_info: Dict[str, Any]) -> str:
         """格式化文件分享

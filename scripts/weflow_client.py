@@ -588,11 +588,11 @@ class WeFlowClient:
             if type_match:
                 result["raw_type"] = int(type_match.group(1))
 
-            # 判断卡片类型（文件要优先于链接检测）
-            if '<fileupload>' in raw_content or '<appattach>' in raw_content:
-                result["type"] = "file"  # 文件分享（优先检测）
-            elif '<refermsg>' in raw_content:
-                result["type"] = "quote"  # 引用回复
+            # 判断卡片类型（引用优先于文件，避免引用+附件消息被误判为文件）
+            if '<refermsg>' in raw_content:
+                result["type"] = "quote"  # 引用回复（优先检测）
+            elif '<fileupload>' in raw_content or '<appattach>' in raw_content:
+                result["type"] = "file"  # 文件分享
             elif result["url"] and 'mp.weixin.qq.com' in result["url"]:
                 result["type"] = "wechat_article"  # 微信公众号文章
             elif result["url"]:

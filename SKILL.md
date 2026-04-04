@@ -103,7 +103,7 @@ python scripts/chat_context.py --date 2026-03-25
 
 - `--output`, `-o`: 输出目录
 
-- `--describe`: 使用 describe 模式（输出 `[图片|file:///...]` 占位符，由 MCP 工具分析后脚本替换为文字描述）
+- `--describe`: 使用 describe 模式（输出 `[图片|file:///...]` 占位符，由 `describe_images.py` 并行调用 Vision API 分析后，`replace_images.py` 脚本替换为文字描述）
 
 - `--stats`: 显示统计信息
 
@@ -111,7 +111,8 @@ python scripts/chat_context.py --date 2026-03-25
 
 **输出文件**：`{tempDir}/chat_context_YYYYMMDD.md`
 
-**describe 模式额外输出**：`{tempDir}/chat_context_YYYYMMDD_images.txt`（图片路径列表，每行一个 `file:///` 路径）
+**describe 模式额外输出**：`{tempDir}/chat_context_YYYYMMDD_images.txt`（图片路径列表）
+**describe 模式图片分析**：`python scripts/describe_images.py --images-file ... --output-dir ...`（并行 Vision API 分析）
 
 ## 记忆机制
 

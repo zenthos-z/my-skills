@@ -64,44 +64,25 @@ python scripts/chat_context.py --date <YYYY-MM-DD>
 
 **3a. 读取图片路径列表**：读取 `{tempDir}/chat_context_YYYYMMDD_images.txt`（脚本已自动生成，每行一个图片路径）。若该文件不存在或为空，跳过后续 describe 步骤，直接进入 Step 4。
 
-**3b. 创建临时目录**：`{tempDir}/image_desc_YYYYMMDD/`
+**3b. 执行图片分析脚本**：
 
-**3c. 分批分配图片分析 Agent**：先读取 `agents/ImageAnalyzer.md` 获取完整的系统提示和描述策略。然后将图片路径列表均分给 4-8 个 general-purpose agent，在同一条消息中并行 spawn 所有 agent（foreground 模式，不使用 `run_in_background`，主会话等待全部完成后继续）。
-
-**分组规则**：
-- 总图片数 ≤ 4：每个 agent 1 张，启动 N 个 agent
-- 总图片数 5-8：启动 4 个 agent，均分图片
-- 总图片数 9-20：启动 4 个 agent，每个处理约 N/4 张
-- 总图片数 > 20：启动 6-8 个 agent，每个不超过 5 张
-
-每个 agent 的调用方式：
-
-```
-Agent(
-  subagent_type="general-purpose",
-  description="Analyze batch {N} images",
-  prompt="""
-{ImageAnalyzer.md 的完整系统提示内容}
-
----
-## 当前任务
-
-batchIndex: {N}
-outputDir: {tempDir 的绝对路径}/image_desc_YYYYMMDD
-images:
-{batch_images_list 的绝对路径}
-"""
-)
+```bash
+python scripts/describe_images.py \
+  --images-file {tempDir}/chat_context_YYYYMMDD_images.txt \
+  --output-dir {tempDir}/image_desc_YYYYMMDD
 ```
 
-其中：
-- 系统提示部分：将 `agents/ImageAnalyzer.md` 中 `---` frontmatter 之后的全部正文内容原样嵌入
-- **`outputDir` 和 `images` 路径都必须为绝对路径**（如 `G:\code_library\qunribao\temp\image_desc_20260404`），避免 agent 巡作目录与主会话不一致导致文件写入错误位置
-- `{batch_images_list}` 是分配给该批次的图片路径，每行一个（保留 `file:///` 前缀）
+脚本内部自动：
+- base64 编码每张图片
+- 并行调用 vision API（并发 ≥ 10，asyncio.Semaphore 控制）
+- 失败重试（最多 3 次，指数退避）
+- 输出 descriptions.json + 统计信息
 
-**3d. 全部 agent 完成后执行替换脚本**：
+**3c. 检查退出码和统计输出**：
+- 退出码 0 + 有成功描述：继续
+- 退出码 1：全部失败，向用户报告错误
 
-所有 agent 返回后，确认 `{tempDir}/image_desc_YYYYMMDD/` 下已生成所有 `batch_N.json` 文件，然后执行替换：
+**3d. 执行替换**：
 ```bash
 python scripts/replace_images.py \
   --context {tempDir}/chat_context_YYYYMMDD.md \

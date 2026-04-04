@@ -129,6 +129,26 @@ class InitWizard:
         memory_dir = input(f"记忆文件目录 [{base_dir}\\memory]: ").strip()
         config['memoryDir'] = memory_dir or f"{base_dir}\\memory"
 
+        # 图片识别 API 配置（可选）
+        print()
+        print("[图片识别 API 配置（可选）]")
+        print("describe 模式使用 vision API 分析图片内容。")
+        print("留空则使用默认值（智谱 GLM-4.6V-Flash）：")
+        has_vision = input("是否配置自定义 vision API? [y/N]: ").strip().lower()
+        if has_vision == 'y':
+            vision_url = input("  API base URL [https://open.bigmodel.cn/api/paas/v4]: ").strip()
+            vision_model = input("  Vision 模型 [glm-4.6v-flash]: ").strip()
+            vision_key_env = input("  API Key 环境变量名 [ANTHROPIC_AUTH_TOKEN]: ").strip()
+            vision_concurrency = input("  并行数 [10]: ").strip()
+            config['vision'] = {
+                'baseUrl': vision_url or 'https://open.bigmodel.cn/api/paas/v4',
+                'model': vision_model or 'glm-4.6v-flash',
+                'apiKeyEnv': vision_key_env or 'ANTHROPIC_AUTH_TOKEN',
+                'concurrency': int(vision_concurrency) if vision_concurrency else 10,
+            }
+        else:
+            config['vision'] = None  # 使用脚本内置默认值
+
         # 使用模板的默认值
         config['valueTopics'] = template.get('valueTopics', [])
         config['engineeringGroups'] = template.get('engineeringGroups', [])
@@ -162,6 +182,17 @@ class InitWizard:
         for ldr in config.get('leaders', []):
             lines.append(f"- {ldr['name']}: {ldr['role']}")
         lines.append("")
+
+        # 图片识别 API
+        if config.get('vision'):
+            lines.append("## 图片识别 API")
+            v = config['vision']
+            lines.append(f"- baseUrl: {v['baseUrl']}")
+            lines.append(f"- model: {v['model']}")
+            lines.append(f"- apiKeyEnv: {v['apiKeyEnv']}")
+            lines.append(f"- concurrency: {v['concurrency']}")
+            lines.append("")
+
         lines.append("## 价值议题")
         for topic in config.get('valueTopics', []):
             lines.append(f"- {topic}")
