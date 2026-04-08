@@ -13,9 +13,18 @@
 
 [安装](#-安装) · [使用](#-使用) · [流程](#-五阶段采访流程) · [示例](#-真实案例) · [参考](#-参考资源)
 
+**🌐 在线体验：** [学习方法论](https://zenthos.top/systems-thinking/) · [对话实录演示](https://zenthos.top/systems-thinking/chat/)
+
 </div>
 
 ---
+
+## 🌐 在线演示
+
+| 页面 | 链接 | 说明 |
+|:-----|:-----|:-----|
+| 📖 **学习方法论** | [zenthos.top/systems-thinking](https://zenthos.top/systems-thinking/) | 交互式网页，学习系统思考三大支柱、方法论框架与核心概念 |
+| 💬 **对话实录演示** | [zenthos.top/systems-thinking/chat](https://zenthos.top/systems-thinking/chat/) | 真实五阶段采访完整记录：分析一位工程师对 Agentic RL 研究方向的迷茫 |
 
 ## ✨ 它能做什么？
 
