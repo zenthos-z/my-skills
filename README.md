@@ -33,7 +33,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/systems-thinking-skill.git
+git clone https://github.com/zenthos-z/systems-thinking-skill.git
 
 # 复制到 Claude Code 全局技能目录
 mkdir -p ~/.claude/skills/systems-thinking
