@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 [![Chinese](https://img.shields.io/badge/Language-中文-blue?style=flat-square)](./CLAUDE.md)
 
-[安装](#-安装) · [使用](#-使用) · [流程](#-五阶段采访流程) · [示例](#-真实案例) · [参考](#-参考资源)
+[安装](#-安装) · [使用](#-使用) · [流程](#-五阶段采访流程) · [示例](#-真实案例) · [参考](#-参考资源) · [技能市场](https://skills.sh)
 
 **🌐 在线体验：** [学习方法论](https://zenthos.top/systems-thinking/) · [对话实录演示](https://zenthos.top/systems-thinking/chat/)
 <img src="assets/header.png" alt="Systems Thinking Skill" width="100%">
@@ -38,21 +38,37 @@
 
 ## 📦 安装
 
-### 全局安装（所有项目可用）
+### 一键安装（推荐）
+
+```bash
+npx skills add zenthos-z/systems-thinking-skill
+```
+
+> 支持所有主流 AI 编程助手：Claude Code、Cursor、Codex、Cline、Roo Code 等 40+ 客户端。
+> 详见 [skills CLI](https://github.com/vercel-labs/skills)。
+
+```bash
+# 指定安装到 Claude Code
+npx skills add zenthos-z/systems-thinking-skill -a claude-code
+
+# 全局安装（所有项目可用）
+npx skills add zenthos-z/systems-thinking-skill -g
+
+# 指定安装到多个客户端
+npx skills add zenthos-z/systems-thinking-skill -a claude-code -a cursor -a codex
+```
+
+### 手动安装
 
 ```bash
 # 克隆仓库
 git clone https://github.com/zenthos-z/systems-thinking-skill.git
 
-# 复制到 Claude Code 全局技能目录
+# 全局安装（所有项目可用）
 mkdir -p ~/.claude/skills/systems-thinking
 cp -r systems-thinking-skill/{SKILL.md,CLAUDE.md,references,examples} ~/.claude/skills/systems-thinking/
-```
 
-### 项目级安装
-
-```bash
-# 在你的项目根目录下
+# 项目级安装
 mkdir -p .claude/skills/systems-thinking
 cp -r systems-thinking-skill/{SKILL.md,CLAUDE.md,references,examples} .claude/skills/systems-thinking/
 ```
