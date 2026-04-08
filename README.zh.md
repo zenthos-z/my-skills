@@ -15,11 +15,27 @@
 
 ## 安装
 
+### 一键安装（推荐）
+
 ```bash
-claude skill install https://github.com/lz347396004/mermaid-pro
+npx skills add zenthos-z/mermaid-pro
 ```
 
-或手动复制到 Claude 技能目录：
+> 支持所有主流 AI 编程助手：Claude Code、Cursor、Codex、Cline、Roo Code 等 40+ 客户端。
+> 详见 [skills CLI](https://github.com/vercel-labs/skills)。
+
+```bash
+# 指定安装到 Claude Code
+npx skills add zenthos-z/mermaid-pro -a claude-code
+
+# 全局安装（所有项目可用）
+npx skills add zenthos-z/mermaid-pro -g
+
+# 指定安装到多个客户端
+npx skills add zenthos-z/mermaid-pro -a claude-code -a cursor -a codex
+```
+
+### 手动安装
 
 ```bash
 cp -r mermaid-pro ~/.claude/skills/

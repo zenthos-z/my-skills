@@ -15,11 +15,27 @@ A Claude Code skill for generating professional, visually appealing Mermaid diag
 
 ## Installation
 
+### One-click install (Recommended)
+
 ```bash
-claude skill install https://github.com/your-username/mermaid-pro
+npx skills add zenthos-z/mermaid-pro
 ```
 
-Or manually copy to your Claude skills directory:
+> Supports 40+ AI coding agents: Claude Code, Cursor, Codex, Cline, Roo Code, and more.
+> See [skills CLI](https://github.com/vercel-labs/skills).
+
+```bash
+# Install to Claude Code only
+npx skills add zenthos-z/mermaid-pro -a claude-code
+
+# Global install (available in all projects)
+npx skills add zenthos-z/mermaid-pro -g
+
+# Install to multiple agents
+npx skills add zenthos-z/mermaid-pro -a claude-code -a cursor -a codex
+```
+
+### Manual install
 
 ```bash
 cp -r mermaid-pro ~/.claude/skills/
