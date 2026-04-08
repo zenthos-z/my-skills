@@ -1,0 +1,16 @@
+# Documentation & web app (contains sensitive deployment files)
+docs/
+
+# Claude Code local settings
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
