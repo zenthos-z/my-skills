@@ -1,7 +1,7 @@
 {
   "_comment": "DMX Gemini 3.1 Flash Image Preview 完整配置文档",
   "version": "1.1.0",
-  "description": "DMX Gemini 3.1 Flash Image Preview 图片生成配置",
+  "description": "Quick Img - 快速图片生成配置（默认 DMX Gemini 3.1 Flash Image Preview）",
 
   "api": {
     "base_url": "https://www.dmxapi.cn",

@@ -1,7 +1,7 @@
 ---
-name: dmx-image-gen
+name: quick-img
 description: |
-  DMX Image Generator - 通过 DMX API 的 Gemini 3.1 Flash Image Preview 模型生成高质量图片。
+  Quick Img - 通过 API 快速生成高质量图片（默认使用 DMX Gemini 3.1 Flash Image Preview 模型）。
 
   使用场景:
   - 日报/周报转配图
@@ -11,7 +11,7 @@ description: |
   触发词: banana生图, 图片生成, 日报转图片
 ---
 
-# DMX Image Generator
+# Quick Img
 
 **设计理念**: 极简模式为默认（模板+源文件直接拼接），可选高级模式（变量注入）。
 

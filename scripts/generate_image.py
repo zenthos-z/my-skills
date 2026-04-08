@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DMX Image Generator - 极简图片生成工具
+Quick Img - 快速图片生成工具
 
 使用方式:
     # 极简模式（默认）- 模板前缀 + 源文件内容直接拼接
@@ -230,7 +230,7 @@ def call_dmx_api(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="DMX 图片生成工具 - 极简模式默认直接拼接，高级模式支持变量注入",
+        description="Quick Img - 快速图片生成，极简模式默认直接拼接，高级模式支持变量注入",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:

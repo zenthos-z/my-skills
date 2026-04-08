@@ -1,4 +1,4 @@
-# DMX Image Generator - 完整参数参考
+# Quick Img - 完整参数参考
 
 本文档包含 DMX Gemini 3.1 Flash Image Preview API 的完整参数说明。
 

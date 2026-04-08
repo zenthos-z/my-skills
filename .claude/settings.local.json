@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"G:/code_library/dmx-image-gen/docs\")",
+      "Bash(cp \"G:/code_library/dmx-image-gen/README.md\" \"G:/code_library/dmx-image-gen/docs/prompt-flowchart.md\")",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)"
+    ]
+  }
+}

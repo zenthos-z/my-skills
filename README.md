@@ -1,5 +1,5 @@
 <p align="center">
-  <b>DMX Image Generator</b>
+  <b>Quick Img</b>
 </p>
 
 <p align="center">
@@ -35,7 +35,7 @@
 ### 1. Install
 
 ```bash
-npx skills add <owner/repo>@dmx-image-gen
+npx skills add zenthos-z/quick-img@quick-img
 ```
 
 ### 2. Configure API Key
