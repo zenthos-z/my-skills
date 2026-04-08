@@ -91,6 +91,37 @@ cp -r systems-thinking-skill/{SKILL.md,CLAUDE.md,references,examples} .claude/sk
 > "帮我画系统循环图"
 > "这个问题的杠杆点在哪里？"
 
+## 💾 会话记忆
+
+系统思考分析往往跨越数天。本技能内置会话持久化，支持**保存进度、下次继续**。
+
+### 工作方式
+
+```
+/systems-thinking
+        │
+        ▼
+  检查历史会话...
+        │
+   ┌────┴────┐
+   │有历史会话│  无历史会话 → 直接开始
+   └────┬────┘
+        ▼
+  📂 发现历史分析会话：
+    1. [团队沟通] 阶段 3/5 — 4月8日
+    2. [产品策略] ✅ 已完成 — 4月5日
+  ────────────────────────────
+  输入数字继续 | 输入 n 新建
+```
+
+- **自动保存**：每完成一个阶段，进度自动保存到 `~/.systems-thinking/sessions/`
+- **随时暂停**：说"先到这里"即可保存并退出，下次继续
+- **报告确认**：全部阶段完成后，先展示摘要让你确认，确认后才生成报告
+
+### 存储位置
+
+会话文件存储在 `~/.systems-thinking/sessions/`（用户主目录），跨项目可用，不会提交到 Git。
+
 ## 🔄 五阶段采访流程
 
 ```
@@ -161,7 +192,8 @@ systems-thinking-skill/
 │   ├── interview-guide.md            # 五阶段详细问题库
 │   ├── thinking-tools.md             # 12 种思维分析工具
 │   ├── common-pitfalls.md            # 15 个常见陷阱及对策
-│   └── output-template.md            # 系统分析报告模板
+│   ├── output-template.md            # 系统分析报告模板
+│   └── session-management.md         # 会话持久化操作规范
 │
 └── examples/                         # 真实案例分析
     ├── employee-turnover.md          # 员工流失恶性循环
