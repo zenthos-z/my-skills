@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/header.png" alt="Systems Thinking Skill" width="100%">
+
 # 🧠 Systems Thinking Skill
 
 **Claude Code 的系统思考教练技能**
