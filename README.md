@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/header.png" alt="Systems Thinking Skill" width="100%">
-
 # 🧠 Systems Thinking Skill
 
 **Claude Code 的系统思考教练技能**
@@ -16,7 +14,7 @@
 [安装](#-安装) · [使用](#-使用) · [流程](#-五阶段采访流程) · [示例](#-真实案例) · [参考](#-参考资源)
 
 **🌐 在线体验：** [学习方法论](https://zenthos.top/systems-thinking/) · [对话实录演示](https://zenthos.top/systems-thinking/chat/)
-
+<img src="assets/header.png" alt="Systems Thinking Skill" width="100%">
 </div>
 
 ---
