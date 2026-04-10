@@ -35,12 +35,12 @@ npx skills add zenthos-z/claude-skill-qunribao -a claude-code -a cursor -a codex
 ### 手动安装
 
 ```bash
-# 进入你的项目目录
-cd your-project
+# 从 monorepo 克隆（推荐）
+git clone https://github.com/zenthos-z/my-skills.git
 
-# 克隆技能
+# 安装到项目
 mkdir -p .claude/skills
-git clone https://github.com/zenthos-z/claude-skill-qunribao.git .claude/skills/qunribao
+cp -r my-skills/qunribao .claude/skills/
 ```
 
 安装后在 Claude Code 中即可通过 `/qunribao` 使用。详见下方配置说明。
@@ -236,7 +236,7 @@ Step 5+: 生成报告
 ## 目录结构
 
 ```
-（安装后的路径：.claude/skills/qunribao/）
+（安装后的路径：~/.claude/skills/qunribao/）
 ├── README.md                       ← 本文件
 ├── SKILL.md                        ← Claude skill 注册信息
 ├── scripts/

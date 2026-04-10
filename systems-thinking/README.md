@@ -61,16 +61,16 @@ npx skills add zenthos-z/systems-thinking-skill -a claude-code -a cursor -a code
 ### 手动安装
 
 ```bash
-# 克隆仓库
-git clone https://github.com/zenthos-z/systems-thinking-skill.git
+# 从 monorepo 克隆（推荐）
+git clone https://github.com/zenthos-z/my-skills.git
 
 # 全局安装（所有项目可用）
 mkdir -p ~/.claude/skills/systems-thinking
-cp -r systems-thinking-skill/{SKILL.md,CLAUDE.md,references,examples} ~/.claude/skills/systems-thinking/
+cp -r my-skills/systems-thinking/{SKILL.md,CLAUDE.md,references,examples} ~/.claude/skills/systems-thinking/
 
 # 项目级安装
 mkdir -p .claude/skills/systems-thinking
-cp -r systems-thinking-skill/{SKILL.md,CLAUDE.md,references,examples} .claude/skills/systems-thinking/
+cp -r my-skills/systems-thinking/{SKILL.md,CLAUDE.md,references,examples} .claude/skills/systems-thinking/
 ```
 
 ## 🚀 使用

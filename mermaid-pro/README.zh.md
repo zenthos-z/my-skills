@@ -71,7 +71,9 @@ npx skills add zenthos-z/mermaid-pro
 ### 手动安装
 
 ```bash
-cp -r mermaid-pro ~/.claude/skills/
+# 从 monorepo 克隆（推荐）
+git clone https://github.com/zenthos-z/my-skills.git
+cp -r my-skills/mermaid-pro ~/.claude/skills/
 ```
 
 ---

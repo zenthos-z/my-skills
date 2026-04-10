@@ -25,7 +25,9 @@
 ### 1. Install
 
 ```bash
-npx skills add zenthos-z/quick-img@quick-img
+# From monorepo (recommended)
+git clone https://github.com/zenthos-z/my-skills.git
+cp -r my-skills/quick-img ~/.claude/skills/
 ```
 
 ### 2. Configure
