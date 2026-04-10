@@ -43,7 +43,7 @@
 
 ```bash
 # 1. Install the skill
-npx skills add zenthos-z/mermaid-pro
+npx skills add zenthos-z/my-skills/mermaid-pro
 
 # 2. Ask your AI assistant to create a diagram
 # In Claude Code, just type:
@@ -62,7 +62,7 @@ That's it. Your AI assistant will now generate validated, color-coded Mermaid di
 ### One-click install (Recommended)
 
 ```bash
-npx skills add zenthos-z/mermaid-pro
+npx skills add zenthos-z/my-skills/mermaid-pro
 ```
 
 > Supports 40+ AI coding agents: Claude Code, Cursor, Codex, Cline, Roo Code, and more.

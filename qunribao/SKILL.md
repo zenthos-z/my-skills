@@ -58,7 +58,7 @@ Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生
 **配图依赖**：配图功能依赖独立的 `quick-img` 技能（https://github.com/zenthos-z/quick-img）。
 
 - 若 quick-img 已安装：直接调用 `generate_image.py` 生图（见 `daily_workflow.md` Step 9）
-- 若 quick-img 未安装：向用户说明并询问是否安装，安装命令为 `npx @anthropic-ai/claude-code-skills add zenthos-z/quick-img@quick-img`
+- 若 quick-img 未安装：向用户说明并询问是否安装，安装命令为 `npx skills add zenthos-z/my-skills/quick-img`
 - 若用户拒绝安装：停止配图步骤，等待用户指定替代方案
 
 配图模板文件位于 `assets/templates/` 目录，包含：

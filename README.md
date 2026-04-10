@@ -29,10 +29,10 @@ cp -r */ ~/.claude/skills/
 
 Or install from GitHub:
 ```bash
-npx @anthropic-ai/claude-code-skills add zenthos-z/mermaid-pro@mermaid-pro
-npx @anthropic-ai/claude-code-skills add zenthos-z/systems-thinking-skill@systems-thinking-skill
-npx @anthropic-ai/claude-code-skills add zenthos-z/claude-skill-qunribao@claude-skill-qunribao
-npx @anthropic-ai/claude-code-skills add zenthos-z/quick-img@quick-img
+npx skills add zenthos-z/my-skills/mermaid-pro
+npx skills add zenthos-z/my-skills/systems-thinking
+npx skills add zenthos-z/my-skills/qunribao
+npx skills add zenthos-z/my-skills/quick-img
 ```
 
 ## Setup

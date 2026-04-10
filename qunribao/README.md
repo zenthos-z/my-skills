@@ -15,7 +15,7 @@
 ### 一键安装（推荐）
 
 ```bash
-npx skills add zenthos-z/claude-skill-qunribao
+npx skills add zenthos-z/my-skills/qunribao
 ```
 
 > 支持所有主流 AI 编程助手：Claude Code、Cursor、Codex、Cline、Roo Code 等 40+ 客户端。
@@ -23,13 +23,13 @@ npx skills add zenthos-z/claude-skill-qunribao
 
 ```bash
 # 指定安装到 Claude Code
-npx skills add zenthos-z/claude-skill-qunribao -a claude-code
+npx skills add zenthos-z/my-skills/qunribao -a claude-code
 
 # 全局安装（所有项目可用）
-npx skills add zenthos-z/claude-skill-qunribao -g
+npx skills add zenthos-z/my-skills/qunribao -g
 
 # 指定安装到多个客户端
-npx skills add zenthos-z/claude-skill-qunribao -a claude-code -a cursor -a codex
+npx skills add zenthos-z/my-skills/qunribao -a claude-code -a cursor -a codex
 ```
 
 ### 手动安装

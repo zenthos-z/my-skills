@@ -422,7 +422,7 @@ python scripts/feishu_upload.py \
 **若 quick-img 不可用**：
 1. 停止配图步骤
 2. 告知用户：「配图功能需要 quick-img 技能，当前未检测到。是否立即安装？」
-3. 用户同意 → 执行：`npx @anthropic-ai/claude-code-skills add zenthos-z/quick-img@quick-img`
+3. 用户同意 → 执行：`npx skills add zenthos-z/my-skills/quick-img`
 4. 用户拒绝 → 停止，等待用户指定替代方案。**不得自行选择替代方案**
 
 ### 10b：提炼配图内容
