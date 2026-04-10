@@ -1,0 +1,13 @@
+设计一张精美的海报：
+
+主题：{{title}}
+内容要求：{{content}}
+{{#style}}风格：{{style}}
+{{/style}}{{#color_scheme}}主色调：{{color_scheme}}
+{{/color_scheme}}{{#elements}}辅助元素：{{elements}}
+{{/elements}}
+设计要求：
+- 构图平衡，视觉焦点突出
+- 配色协调，符合主题氛围
+- 文字清晰可读，层次分明
+- 整体风格统一，专业美观

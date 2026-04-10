@@ -1,0 +1,94 @@
+{
+  "_comment": "DMX Gemini 3.1 Flash Image Preview 完整配置文档",
+  "version": "1.1.0",
+  "description": "Quick Img - 快速图片生成配置（默认 DMX Gemini 3.1 Flash Image Preview）",
+
+  "api": {
+    "base_url": "https://www.dmxapi.cn",
+    "model": "gemini-3.1-flash-image-preview-ssvip",
+    "endpoint": "/v1beta/models/gemini-3.1-flash-image-preview-ssvip:generateContent",
+    "env_key_name": "DMX_API_KEY"
+  },
+
+  "output": {
+    "default_format": "png",
+    "timestamp_format": "%Y%m%d_%H%M%S",
+    "filename_max_length": 10
+  },
+
+  "image_params": {
+    "default_ratio": "4:5",
+    "default_size": "2K",
+    "default_image_search": true
+  },
+
+  "presets": {
+    "square_post": {
+      "ratio": "1:1",
+      "size": "1K",
+      "template": "生图模板"
+    },
+    "wide_banner": {
+      "ratio": "16:9",
+      "size": "2K",
+      "template": "生图模板"
+    },
+    "mobile_story": {
+      "ratio": "9:16",
+      "size": "2K",
+      "template": "海报模板"
+    }
+  },
+
+  "aspect_ratios": {
+    "_comment": "共14种宽高比，按常用程度排序",
+    "popular": ["4:5", "1:1", "16:9", "9:16", "4:3"],
+    "all": [
+      "1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1", "4:3",
+      "4:5", "5:4", "8:1", "9:16", "16:9", "21:9"
+    ],
+    "descriptions": {
+      "1:1": { "name": "正方形", "pixels": "1024x1024", "use_case": "头像、Instagram帖子、商品主图" },
+      "4:5": { "name": "竖版推荐", "pixels": "1024x1280", "use_case": "Instagram竖版、小红书、日报配图(推荐)" },
+      "16:9": { "name": "宽屏", "pixels": "1024x576", "use_case": "PPT封面、视频封面、横幅Banner" },
+      "9:16": { "name": "竖屏", "pixels": "576x1024", "use_case": "手机壁纸、Stories、短视频封面" },
+      "4:3": { "name": "标准文档", "pixels": "1024x768", "use_case": "文档插图、幻灯片" },
+      "2:3": { "name": "人像竖版", "pixels": "768x1152", "use_case": "人像摄影、海报" },
+      "3:2": { "name": "单反比例", "pixels": "1152x768", "use_case": "风景摄影、产品展示" },
+      "3:4": { "name": "竖版文档", "pixels": "768x1024", "use_case": "移动端文档" },
+      "21:9": { "name": "超宽屏", "pixels": "1024x439", "use_case": "网站Banner、宽屏显示器" },
+      "5:4": { "name": "传统照片", "pixels": "1280x1024", "use_case": "传统照片打印尺寸" },
+      "1:4": { "name": "极竖", "pixels": "256x1024", "use_case": "长图、流程图" },
+      "4:1": { "name": "极宽", "pixels": "1024x256", "use_case": "全景图、时间轴" },
+      "1:8": { "name": "超长竖图", "pixels": "128x1024", "use_case": "信息长图" },
+      "8:1": { "name": "超长横图", "pixels": "1024x128", "use_case": "超长横幅" }
+    }
+  },
+
+  "image_sizes": {
+    "_comment": "4档分辨率，根据质量需求和Token预算选择",
+    "sizes": {
+      "0.5K": { "short_dimension": 512, "tokens": 747, "desc": "快速预览、草稿测试", "use_when": "快速验证提示词效果" },
+      "1K": { "short_dimension": 1024, "tokens": 1120, "desc": "标准质量，平衡性价比", "use_when": "日常配图、社交媒体" },
+      "2K": { "short_dimension": 2048, "tokens": 1120, "desc": "高清质量，推荐用于日报", "use_when": "需要清晰文字的信息图" },
+      "4K": { "short_dimension": 4096, "tokens": 2000, "desc": "超高清，印刷级别", "use_when": "印刷输出、超大展示" }
+    }
+  },
+
+  "api_features": {
+    "imageSearch": {
+      "description": "启用图片搜索，让模型参考真实图片生成",
+      "default": false,
+      "use_when": "需要参考特定风格、真实物体或场景时开启",
+      "note": "会增加生成时间，但能提升特定场景的真实度"
+    }
+  },
+
+  "templates": {
+    "_comment": "可用模板列表，存放于 assets/templates/",
+    "available": [
+      { "name": "生图模板", "file": "生图模板.txt", "description": "默认通用模板，信息图表风格" },
+      { "name": "海报模板", "file": "海报模板.txt", "description": "通用海报模板" }
+    ]
+  }
+}
