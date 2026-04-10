@@ -218,7 +218,7 @@ pip install jsonschema
 ## 文件结构
 
 ```
-.claude/skills/qunribao/
+qunribao/
 ├── scripts/
 │   ├── chat_context.py             # [可执行] 聊天上下文生成器
 │   ├── config_loader.py            # [核心] 多源配置加载器 (env > local > template)

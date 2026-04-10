@@ -6,6 +6,7 @@ qunribao 初始化向导
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, Any
@@ -225,13 +226,25 @@ class InitWizard:
         # 创建hooks目录
         hooks_dir.mkdir(exist_ok=True)
 
+        # 动态计算 privacy_scanner.py 相对于 git root 的路径
+        scripts_dir = Path(__file__).parent
+        try:
+            git_root = Path(subprocess.check_output(
+                ['git', 'rev-parse', '--show-toplevel'],
+                cwd=scripts_dir, text=True
+            ).strip())
+        except Exception:
+            git_root = self.skill_dir  # fallback
+        rel_scripts = scripts_dir.relative_to(git_root)
+        scanner_path = (rel_scripts / 'privacy_scanner.py').as_posix()
+
         # 创建pre-commit钩子
-        hook_content = '''#!/bin/sh
+        hook_content = f'''#!/bin/sh
 # qunribao pre-commit hook
 # 自动检查敏感信息
 
 cd "$(dirname "$0")/.."
-python .claude/skills/qunribao/scripts/privacy_scanner.py
+python {scanner_path}
 '''
         with open(hook_path, 'w', encoding='utf-8') as f:
             f.write(hook_content)

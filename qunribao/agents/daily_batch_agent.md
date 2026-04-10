@@ -214,7 +214,7 @@ generateDaily(date) 详细流程：
 
 ## 文件位置
 
-- Agent 定义：`.claude/skills/qunribao/agents/daily_batch_agent.md`
+- Agent 定义：`agents/daily_batch_agent.md`
 
 ---
 

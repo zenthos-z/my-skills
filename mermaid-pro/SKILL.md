@@ -21,7 +21,7 @@ Generate professional, visually appealing Mermaid diagrams with consistent styli
 **Before** writing to any file or generating images, you MUST validate the syntax:
 
 ```bash
-node ~/.claude/skills/mermaid-pro/scripts/validate-mermaid.mjs "你的Mermaid代码"
+node scripts/validate-mermaid.mjs "你的Mermaid代码"
 ```
 
 - If `{"valid":true}` → proceed to export
@@ -154,7 +154,7 @@ flowchart TD
 
 **After generating, ALWAYS validate before saving:**
 ```bash
-node ~/.claude/skills/mermaid-pro/scripts/validate-mermaid.mjs "flowchart TD\n  Start --> Process"
+node scripts/validate-mermaid.mjs "flowchart TD\n  Start --> Process"
 ```
 
 ## Complete Example
@@ -281,13 +281,13 @@ flowchart TB
 
 ### Validate Syntax
 ```bash
-node ~/.claude/skills/mermaid-pro/scripts/validate-mermaid.mjs "flowchart TD\n A --> B"
+node scripts/validate-mermaid.mjs "flowchart TD\n A --> B"
 ```
 
 ### Convert MD Mermaid to Images
 ```bash
-node ~/.claude/skills/mermaid-pro/scripts/md-mermaid-to-image.mjs ./docs --format svg
-node ~/.claude/skills/mermaid-pro/scripts/md-mermaid-to-image.mjs README.md --keep-code
+node scripts/md-mermaid-to-image.mjs ./docs --format svg
+node scripts/md-mermaid-to-image.mjs README.md --keep-code
 ```
 
 ## References

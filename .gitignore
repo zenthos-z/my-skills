@@ -1,0 +1,34 @@
+# === Node.js ===
+node_modules/
+*.log
+
+# === Python ===
+__pycache__/
+*.py[cod]
+
+# === 敏感配置 ===
+*.local.json
+*.local.md
+.env
+.env.local
+
+# === 运行时输出 ===
+temp/
+memory/
+reports/
+output/
+
+# === systems-thinking ===
+systems-thinking/docs/
+
+# === Claude Code ===
+.claude/
+
+# === IDE & OS ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === qunribao 动态生成 ===
+qunribao/references/shared/topic_hierarchy.md

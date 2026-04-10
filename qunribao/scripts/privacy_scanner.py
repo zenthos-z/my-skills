@@ -50,7 +50,7 @@ class PrivacyScanner:
 
     # 白名单路径模式
     ALLOWLIST_PATHS = [
-        r'\.claude/skills/dmx-image-gen/',  # dmx技能单独处理
+        r'quick-img/',  # quick-img 技能单独处理
     ]
 
     def __init__(self):

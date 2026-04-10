@@ -398,7 +398,7 @@ python scripts/feishu_upload.py \
 
    执行：
    ```bash
-   cd .claude/skills/qunribao && python scripts/memory_filename.py --date <YYYYMMDD>
+   python scripts/memory_filename.py --date <YYYYMMDD>
    ```
 
    输出即目标文件名（如 `topic_tracker_20260328_000001.md`），写入 `{memoryDir}/<filename>`
