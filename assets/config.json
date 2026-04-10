@@ -5,8 +5,8 @@
 
   "api": {
     "base_url": "https://www.dmxapi.cn",
-    "model": "gemini-3.1-flash-image-preview",
-    "endpoint": "/v1beta/models/gemini-3.1-flash-image-preview:generateContent",
+    "model": "gemini-3.1-flash-image-preview-ssvip",
+    "endpoint": "/v1beta/models/gemini-3.1-flash-image-preview-ssvip:generateContent",
     "env_key_name": "DMX_API_KEY"
   },
 
@@ -23,25 +23,20 @@
   },
 
   "presets": {
-    "daily_report": {
-      "ratio": "4:5",
-      "size": "2K",
-      "template": "daily_infographic"
-    },
     "square_post": {
       "ratio": "1:1",
       "size": "1K",
-      "template": "default"
+      "template": "生图模板"
     },
     "wide_banner": {
       "ratio": "16:9",
       "size": "2K",
-      "template": "default"
+      "template": "生图模板"
     },
     "mobile_story": {
       "ratio": "9:16",
       "size": "2K",
-      "template": "poster"
+      "template": "海报模板"
     }
   },
 
@@ -92,14 +87,8 @@
   "templates": {
     "_comment": "可用模板列表，存放于 assets/templates/",
     "available": [
-      { "name": "default", "file": "default.txt", "mode": "simple", "description": "默认极简模板，通用信息图" },
-      { "name": "daily_infographic", "file": "daily_infographic.txt", "mode": "simple", "description": "日报信息图专用，莫兰迪配色" },
-      { "name": "daily_report", "file": "daily_report.txt", "mode": "advanced", "description": "日报高级模板，支持多变量注入" },
-      { "name": "poster", "file": "poster.txt", "mode": "advanced", "description": "通用海报模板" }
-    ],
-    "refine_prompt": {
-      "file": "refine_for_image.md",
-      "description": "日报配图内容提炼提示词"
-    }
+      { "name": "生图模板", "file": "生图模板.txt", "description": "默认通用模板，信息图表风格" },
+      { "name": "海报模板", "file": "海报模板.txt", "description": "通用海报模板" }
+    ]
   }
 }

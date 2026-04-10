@@ -3,18 +3,14 @@
 Quick Img - 快速图片生成工具
 
 使用方式:
-    # 极简模式（默认）- 模板前缀 + 源文件内容直接拼接
-    python generate_image.py --input report.md
-
-    # 极简模式 + Claude提炼 - 提炼内容通过参数传入（推荐）
-    python generate_image.py --input report.md --refined-content "提炼后的内容..."
-
-    # 高级模式 - 使用变量注入
-    python generate_image.py --input report.md --advanced \
-        --var date="2026-03-24" --var summary="讨论AI记忆机制"
-
-    # 手动模式
+    # Direct Prompt 模式（默认）
     python generate_image.py --prompt "AI概念图" --ratio 16:9 --size 2K
+
+    # Template 模式 - 模板 + 源文件内容
+    python generate_image.py --input report.md --ratio 4:5 --size 2K
+
+    # 批量生成（抽卡）
+    python generate_image.py --prompt "landscape" --count 3
 """
 
 import os
@@ -79,9 +75,13 @@ def load_env() -> str:
         return api_key
 
     raise ValueError(
-        "未找到 DMX_API_KEY。请:\n"
+        "未找到 DMX_API_KEY。请完成以下设置:\n"
         "1. 复制 assets/.env.example 为 assets/.env\n"
-        "2. 填入你的 API Key"
+        "   cp assets/.env.example assets/.env\n"
+        "2. 编辑 assets/.env，填入你的 DMX API Key\n"
+        "   DMX_API_KEY=sk-your-api-key-here\n"
+        "3. 获取 API Key: https://www.dmxapi.cn\n"
+        "提示: 也可设置环境变量 DMX_API_KEY"
     )
 
 
@@ -230,31 +230,24 @@ def call_dmx_api(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Quick Img - 快速图片生成，极简模式默认直接拼接，高级模式支持变量注入",
+        description="Quick Img - 快速图片生成，支持 Direct Prompt 和 Template 两种模式",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  # 极简模式（默认）- 模板前缀 + 源文件内容直接拼接
-  python generate_image.py --input report.md
-
-  # 极简模式 + Claude提炼 - 提炼内容通过参数传入
-  python generate_image.py --input report.md --refined-content "提炼后的内容..."
-
-  # 高级模式 - 使用变量注入
-  python generate_image.py --input report.md --advanced \
-      --var date="2026-03-24" --var summary="讨论AI记忆机制"
-
-  # 手动模式
+  # Direct Prompt 模式（默认）
   python generate_image.py --prompt "AI概念图" --ratio 16:9 --size 2K
 
-  # 批量生成 3 张图
-  python generate_image.py --input report.md --count 3
+  # Template 模式 - 模板 + 源文件内容
+  python generate_image.py --input report.md --ratio 4:5 --size 2K
+
+  # 批量生成（抽卡）
+  python generate_image.py --prompt "landscape" --count 3
 
   # 批量生成 + 保存提示词
-  python generate_image.py --input report.md --count 3 --save-prompts
+  python generate_image.py --prompt "landscape" --count 3 --save-prompts
 
-  # 启用 Google 搜索和 Image Search
-  python generate_image.py --input report.md --google-search --image-search
+  # 启用图片搜索
+  python generate_image.py --prompt "cat" --image-search
 
 环境变量:
   DMX_API_KEY           DMX API Key（用于图片生成）
@@ -262,21 +255,21 @@ def main():
     )
 
     # 模式选择
-    parser.add_argument("--input", "-i", help="源文件路径（极简/高级模式）")
-    parser.add_argument("--prompt", "-p", help="直接输入提示词（手动模式）")
-    parser.add_argument("--refined-content", "-c", help="直接传入提炼后的内容（极简模式+Claude提炼时使用）")
+    parser.add_argument("--input", "-i", help="源文件路径（Template 模式）")
+    parser.add_argument("--prompt", "-p", help="直接输入提示词（Direct Prompt 模式）")
+    parser.add_argument("--refined-content", "-c", help="直接传入提炼后的内容（已弃用，保留向后兼容）")
 
     # 高级模式开关
     parser.add_argument("--advanced", "-a", action="store_true",
-                       help="启用高级变量注入模式（默认关闭，使用极简拼接）")
+                       help="启用高级变量注入（已弃用，保留向后兼容）")
 
-    # 模板选择（极简/高级模式都可用）
-    parser.add_argument("--template", "-t", default="default",
-                       help="模板名称（默认: default，可选: daily_report, poster 等）")
+    # 模板选择
+    parser.add_argument("--template", "-t", default="生图模板",
+                       help="模板名称（默认: 生图模板，可选: 海报模板 等）")
 
-    # 模板变量（仅高级模式有效）
+    # 模板变量
     parser.add_argument("--var", action="append", dest="variables",
-                       help="模板变量（格式: KEY=VALUE，仅 --advanced 模式下有效）")
+                       help="模板变量 KEY=VALUE（已弃用，保留向后兼容）")
 
     # 图片参数
     parser.add_argument("--ratio", default=None,

@@ -4,7 +4,11 @@
       "Bash(mkdir -p \"G:/code_library/dmx-image-gen/docs\")",
       "Bash(cp \"G:/code_library/dmx-image-gen/README.md\" \"G:/code_library/dmx-image-gen/docs/prompt-flowchart.md\")",
       "Bash(gh auth:*)",
-      "Bash(gh repo:*)"
+      "Bash(gh repo:*)",
+      "mcp__siyuan__notebook",
+      "Bash(python scripts/generate_image.py --prompt \"test\" --dry-run --verbose)",
+      "Bash(python scripts/generate_image.py --prompt \"test\" --count 3 --dry-run --verbose)",
+      "Bash(python scripts/generate_image.py --help)"
     ]
   }
 }
