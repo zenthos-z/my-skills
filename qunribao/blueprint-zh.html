@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群日报 - 架构蓝图</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --c-bg: #f8fafc;
+      --c-canvas: #ffffff;
+      --c-border: #cbd5e1;
+      --c-border-dark: #94a3b8;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      --c-accent: #0f172a;
+      --font-ui: 'Noto Sans SC', 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--c-bg);
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    .diagram-container { max-width: 1200px; margin: 0 auto; }
+
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-border);
+      padding: 32px;
+    }
+
+    .diagram-header {
+      border-bottom: 1px solid var(--c-border);
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+    }
+
+    .diagram-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--c-text-main);
+      margin-bottom: 4px;
+    }
+
+    .diagram-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .section { margin-bottom: 32px; }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .component {
+      border: 1px solid var(--c-border);
+      padding: 14px 16px;
+      background: var(--c-canvas);
+    }
+
+    .component-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .component-value {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    .component-desc {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      padding: 2px 6px;
+      border: 1px solid var(--c-border);
+      color: var(--c-text-sub);
+      margin-right: 4px;
+    }
+
+    .badge-solid {
+      background: var(--c-text-main);
+      color: var(--c-canvas);
+      border-color: var(--c-text-main);
+    }
+
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr;
+      align-items: stretch;
+    }
+
+    .pipeline-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--c-border-dark);
+      font-size: 18px;
+    }
+
+    .substeps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .substep {
+      border: 1px solid var(--c-border);
+      padding: 10px 12px;
+      background: var(--c-canvas);
+    }
+
+    .substep-number {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      margin-bottom: 2px;
+    }
+
+    .substep-name {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    .substep-script {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--c-text-sub);
+      margin-top: 2px;
+    }
+
+    .dir-tree {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--c-text-main);
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .dir-tree .dir { font-weight: 500; }
+    .dir-tree .file { color: var(--c-text-sub); }
+    .dir-tree .comment { color: #94a3b8; font-size: 10px; }
+
+    .config-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .config-table th {
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--c-border);
+      color: var(--c-text-sub);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 500;
+    }
+
+    .config-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--c-border);
+      color: var(--c-text-main);
+    }
+
+    .config-table tr:last-child td { border-bottom: none; }
+
+    .topic-badges {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .topic-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--c-border);
+      padding: 8px 14px;
+    }
+
+    .topic-icon { font-size: 14px; }
+
+    .topic-name {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-main);
+    }
+
+    .topic-desc {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      color: var(--c-text-sub);
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--c-border);
+      margin: 24px 0;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .box-outline {
+      border: 1px solid var(--c-border);
+      padding: 16px;
+      position: relative;
+    }
+
+    .box-title {
+      position: absolute;
+      top: -8px;
+      left: 12px;
+      background: var(--c-canvas);
+      padding: 0 6px;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .priority-chain {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .priority-item {
+      padding: 8px 14px;
+      border: 1px solid var(--c-border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-main);
+    }
+
+    .priority-item.highest {
+      background: var(--c-text-main);
+      color: var(--c-canvas);
+      border-color: var(--c-text-main);
+    }
+
+    .priority-arrow {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      padding: 0 8px;
+    }
+
+    .memory-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 0;
+    }
+
+    .memory-step {
+      border: 1px solid var(--c-border);
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    .memory-connector {
+      color: var(--c-border-dark);
+      font-size: 16px;
+      padding: 0 4px;
+    }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-container">
+    <div class="diagram-canvas">
+      <!-- 页头 -->
+      <div class="diagram-header">
+        <div class="diagram-title">群日报 (qunribao) — Claude Code 技能架构</div>
+        <div class="diagram-subtitle">系统架构蓝图 / v1.0 / 微信群聊日报自动生成器</div>
+      </div>
+
+      <!-- ===== 1. 系统总览 ===== -->
+      <div class="section">
+        <div class="section-label">01 / 系统总览</div>
+        <div style="border: 1px solid var(--c-border); padding: 20px; position: relative;">
+          <div class="box-title">数据流管线</div>
+
+          <div class="pipeline-grid" style="margin-top: 4px;">
+            <!-- 阶段 1: 数据源 -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">数据源</div>
+              <div class="component-value">WeFlow API</div>
+              <div class="component-desc">localhost:5031<br>微信消息提取工具</div>
+            </div>
+
+            <div class="pipeline-arrow">→</div>
+
+            <!-- 阶段 2: 数据处理 -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">数据处理</div>
+              <div class="component-value">Python 脚本</div>
+              <div class="component-desc">拉取 · 富化 · 校验<br>图片分析 (Vision API)</div>
+            </div>
+
+            <div class="pipeline-arrow">→</div>
+
+            <!-- 阶段 3: LLM 分析 -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">LLM 分析</div>
+              <div class="component-value">Claude</div>
+              <div class="component-desc">日报 · 资源摘要<br>工程问题 · 记忆更新</div>
+            </div>
+
+            <div class="pipeline-arrow">→</div>
+
+            <!-- 阶段 4: 输出 -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">输出</div>
+              <div class="component-value">多格式</div>
+              <div class="component-desc">Markdown · JSON<br>飞书多维表格 · 图片</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+            <span class="badge">微信群聊</span>
+            <span class="badge">视觉 API (qwen3.5-flash)</span>
+            <span class="badge">飞书多维表格</span>
+            <span class="badge">lark-cli</span>
+            <span class="badge">quick-img 技能</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 2. 项目目录结构 ===== -->
+      <div class="section">
+        <div class="section-label">02 / 项目目录结构</div>
+        <div class="two-col">
+          <div class="dir-tree" style="border: 1px solid var(--c-border); padding: 16px;">
+<span class="dir">claude-skill-qunribao/</span>
+├── <span class="file">SKILL.md</span>           <span class="comment">技能注册与配置</span>
+├── <span class="file">README.md</span>          <span class="comment">项目文档</span>
+├── <span class="dir">agents/</span>
+│   ├── <span class="file">daily_batch_agent.md</span> <span class="comment">批量多日报告代理</span>
+│   └── <span class="file">ImageAnalyzer.md</span>     <span class="comment">视觉分析子代理</span>
+├── <span class="dir">assets/</span>
+│   ├── <span class="file">.env</span>              <span class="comment">DMX_API_KEY 密钥</span>
+│   └── <span class="file">config.local.md</span>    <span class="comment">本地配置 (已忽略)</span>
+└── <span class="dir">references/</span>
+    ├── <span class="file">daily_workflow.md</span>   <span class="comment">10步管线规范</span>
+    ├── <span class="file">daily_report.md</span>     <span class="comment">日报提示词模板</span>
+    ├── <span class="file">weekly_report.md</span>    <span class="comment">周报提示词模板</span>
+    ├── <span class="file">resource_extraction.md</span> <span class="comment">资源提取模板</span>
+    ├── <span class="file">engineering_issues.md</span> <span class="comment">工程问题模板</span>
+    ├── <span class="file">memory_format.md</span>    <span class="comment">话题追踪格式规范</span>
+    ├── <span class="file">onboarding_guide.md</span> <span class="comment">首次配置向导</span>
+    ├── <span class="file">debug_log_template.md</span> <span class="comment">调试日志模板</span>
+    └── <span class="dir">shared/</span>
+        ├── <span class="file">topic_hierarchy.md</span> <span class="comment">话题分类体系</span>
+        ├── <span class="file">writing_standards.md</span> <span class="comment">写作规范</span>
+        └── <span class="file">member_roles.md</span> <span class="comment">成员角色分类</span>
+          </div>
+
+          <div class="dir-tree" style="border: 1px solid var(--c-border); padding: 16px;">
+<span class="dir">scripts/</span>
+├── <span class="file">init.py</span>              <span class="comment">交互式配置向导</span>
+├── <span class="file">config_loader.py</span>      <span class="comment">多源配置加载器</span>
+├── <span class="file">weflow_client.py</span>      <span class="comment">WeFlow HTTP 客户端</span>
+├── <span class="file">chat_context.py</span>       <span class="comment">聊天记录 → Markdown 上下文</span>
+├── <span class="file">describe_images.py</span>    <span class="comment">异步视觉 API 图片分析</span>
+├── <span class="file">replace_images.py</span>     <span class="comment">合并图片描述到上下文</span>
+├── <span class="file">json_validator.py</span>     <span class="comment">JSON Schema 校验</span>
+├── <span class="file">json_to_md.py</span>         <span class="comment">JSON → Markdown 表格</span>
+├── <span class="file">feishu_upload.py</span>      <span class="comment">飞书多维表格载荷构建</span>
+├── <span class="file">memory_filename.py</span>    <span class="comment">版本化文件名生成</span>
+└── <span class="file">privacy_scanner.py</span>    <span class="comment">提交前隐私扫描钩子</span>
+
+<span style="margin-top: 12px; display: block;">
+<span class="dir">运行时目录 (已忽略)</span>
+├── <span class="file">reports/</span>   <span class="comment">JSON + Markdown 输出</span>
+├── <span class="file">memory/</span>    <span class="comment">话题追踪文件</span>
+└── <span class="file">temp/</span>      <span class="comment">聊天上下文缓存</span>
+</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 3. 每日工作流 ===== -->
+      <div class="section">
+        <div class="section-label">03 / 每日工作流 — 10 步管线</div>
+
+        <!-- 步骤 1-5 -->
+        <div class="substeps">
+          <div class="substep">
+            <div class="substep-number">步骤 01</div>
+            <div class="substep-name">加载配置</div>
+            <div class="substep-script">config_loader.py</div>
+            <div class="component-desc">环境变量 > config.local.md > 回退</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 02</div>
+            <div class="substep-name">拉取聊天</div>
+            <div class="substep-script">chat_context.py</div>
+            <div class="component-desc">WeFlow API → chat_context.md</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 03</div>
+            <div class="substep-name">图片分析</div>
+            <div class="substep-script">describe_images.py</div>
+            <div class="component-desc">视觉 API → descriptions.json</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 04</div>
+            <div class="substep-name">加载上下文</div>
+            <div class="substep-script">references/shared/*</div>
+            <div class="component-desc">话题体系 + 写作规范 + 历史记忆</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 05</div>
+            <div class="substep-name">生成日报</div>
+            <div class="substep-script">Claude → JSON → 校验 → MD</div>
+            <div class="component-desc">json_validator + json_to_md</div>
+          </div>
+        </div>
+
+        <!-- 步骤 6-10 -->
+        <div class="substeps" style="margin-top: 12px;">
+          <div class="substep">
+            <div class="substep-number">步骤 06</div>
+            <div class="substep-name">资源摘要</div>
+            <div class="substep-script">resource_extraction.md</div>
+            <div class="component-desc">JSON → 校验 → Markdown</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 07</div>
+            <div class="substep-name">工程问题</div>
+            <div class="substep-script">engineering_issues.md</div>
+            <div class="component-desc">JSON → 校验 → Markdown</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 08</div>
+            <div class="substep-name">飞书上传</div>
+            <div class="substep-script">feishu_upload.py</div>
+            <div class="component-desc">构建多维表格载荷 (需确认)</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 09</div>
+            <div class="substep-name">更新记忆</div>
+            <div class="substep-script">memory_filename.py</div>
+            <div class="component-desc">合并 + 版本化 + 清理 (≤10)</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">步骤 10</div>
+            <div class="substep-name">报告图片</div>
+            <div class="substep-script">quick-img 技能</div>
+            <div class="component-desc">可视化报告卡片 (可选)</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 4. 代理与子代理 ===== -->
+      <div class="section">
+        <div class="section-label">04 / 代理与子代理</div>
+        <div class="three-col">
+          <div class="component">
+            <div class="component-label">主技能</div>
+            <div class="component-value">qunribao (SKILL.md)</div>
+            <div class="component-desc">入口点。读取配置，编排 10 步每日工作流。支持单日或批量模式。</div>
+            <div style="margin-top: 8px;">
+              <span class="badge badge-solid">编排器</span>
+              <span class="badge">命令: /qunribao</span>
+            </div>
+          </div>
+          <div class="component">
+            <div class="component-label">批量代理</div>
+            <div class="component-value">daily_batch_agent.md</div>
+            <div class="component-desc">按日期范围串行执行每日工作流。可跳过资源/工程问题步骤。</div>
+            <div style="margin-top: 8px;">
+              <span class="badge">日期范围循环</span>
+              <span class="badge">错误恢复</span>
+            </div>
+          </div>
+          <div class="component">
+            <div class="component-label">视觉子代理</div>
+            <div class="component-value">ImageAnalyzer.md</div>
+            <div class="component-desc">通过 MCP 视觉工具批量分析图片。输出描述 JSON 供合并。</div>
+            <div style="margin-top: 8px;">
+              <span class="badge">MCP 视觉工具</span>
+              <span class="badge">批量 JSON 输出</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 5. 配置优先级 ===== -->
+      <div class="section">
+        <div class="section-label">05 / 配置加载优先级</div>
+        <div class="priority-chain" style="justify-content: center;">
+          <div class="priority-item highest">QUNRIBAO_* 环境变量</div>
+          <div class="priority-arrow">覆盖</div>
+          <div class="priority-item">config.local.md</div>
+          <div class="priority-arrow">覆盖</div>
+          <div class="priority-item">config.json 回退</div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <table class="config-table">
+            <thead>
+              <tr>
+                <th>配置项</th>
+                <th>示例值</th>
+                <th>用途</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>weflow.baseUrl</td>
+                <td>http://127.0.0.1:5031</td>
+                <td>WeFlow API 端点</td>
+              </tr>
+              <tr>
+                <td>weflow.chatroomId</td>
+                <td>45041645858@chatroom</td>
+                <td>目标微信群</td>
+              </tr>
+              <tr>
+                <td>outputDir</td>
+                <td>reports/</td>
+                <td>JSON + Markdown 输出目录</td>
+              </tr>
+              <tr>
+                <td>memoryDir</td>
+                <td>memory/</td>
+                <td>话题追踪存储目录</td>
+              </tr>
+              <tr>
+                <td>managers</td>
+                <td>瞿炜, Li老师, 梗直哥</td>
+                <td>高权重参与者</td>
+              </tr>
+              <tr>
+                <td>feishu.bitableAppToken</td>
+                <td>XgifbiqYMag2...</td>
+                <td>飞书多维表格目标</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 6. 话题分类体系 ===== -->
+      <div class="section">
+        <div class="section-label">06 / 话题分类体系</div>
+        <div class="topic-badges">
+          <div class="topic-badge">
+            <span class="topic-icon">⭐</span>
+            <div>
+              <div class="topic-name">星标 Star</div>
+              <div class="topic-desc">明确的长期核心讨论主题</div>
+            </div>
+          </div>
+          <div class="topic-badge">
+            <span class="topic-icon">🔄</span>
+            <div>
+              <div class="topic-name">循环 Cycle</div>
+              <div class="topic-desc">跨天反复出现的话题</div>
+            </div>
+          </div>
+          <div class="topic-badge">
+            <span class="topic-icon">💡</span>
+            <div>
+              <div class="topic-name">灵光 Bulb</div>
+              <div class="topic-desc">零散但有价值的技术洞见</div>
+            </div>
+          </div>
+          <div class="topic-badge">
+            <span class="topic-icon">✅</span>
+            <div>
+              <div class="topic-name">已结 Check</div>
+              <div class="topic-desc">已解决/已归档的话题</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 7. 记忆生命周期 ===== -->
+      <div class="section">
+        <div class="section-label">07 / 记忆生命周期</div>
+        <div style="border: 1px solid var(--c-border); padding: 20px;">
+          <div class="memory-flow">
+            <div class="memory-step">
+              <div class="component-label">读取</div>
+              <div class="component-value" style="font-size: 11px;">topic_tracker_最新版.md</div>
+            </div>
+            <div class="memory-connector">→</div>
+            <div class="memory-step">
+              <div class="component-label">合并</div>
+              <div class="component-value" style="font-size: 11px;">旧结论 + 新结论</div>
+            </div>
+            <div class="memory-connector">→</div>
+            <div class="memory-step">
+              <div class="component-label">压缩</div>
+              <div class="component-value" style="font-size: 11px">&lt;10,000 token 预算</div>
+            </div>
+            <div class="memory-connector">→</div>
+            <div class="memory-step">
+              <div class="component-label">写入</div>
+              <div class="component-value" style="font-size: 11px;">topic_tracker_YYYYMMDD_NNNNNN.md</div>
+            </div>
+          </div>
+          <div style="margin-top: 16px; display: flex; gap: 16px; justify-content: center;">
+            <span class="badge">自动清理: 保留 ≤ 10 个版本</span>
+            <span class="badge">token 预算: &lt;10K</span>
+            <span class="badge">较早结论自动压缩</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 8. 报告输出 ===== -->
+      <div class="section">
+        <div class="section-label">08 / 报告输出格式</div>
+        <div class="output-grid">
+          <div class="component" style="text-align: center;">
+            <div class="component-label">每日日报</div>
+            <div class="component-value">群日报·YYYY-MM-DD.md</div>
+            <div class="component-desc">概览 · 话题 · 趋势 · 关键成员</div>
+            <div style="margin-top: 6px;"><span class="badge badge-solid">核心输出</span></div>
+          </div>
+          <div class="component" style="text-align: center;">
+            <div class="component-label">资源摘要</div>
+            <div class="component-value">resources·YYYY-MM-DD.md</div>
+            <div class="component-desc">链接 · 工具 · 分享的文章</div>
+            <div style="margin-top: 6px;"><span class="badge">可选</span></div>
+          </div>
+          <div class="component" style="text-align: center;">
+            <div class="component-label">工程问题</div>
+            <div class="component-value">issues·YYYY-MM-DD.md</div>
+            <div class="component-desc">Bug · 解决方案 · 状态追踪</div>
+            <div style="margin-top: 6px;"><span class="badge">可选</span></div>
+          </div>
+          <div class="component" style="text-align: center;">
+            <div class="component-label">每周周报</div>
+            <div class="component-value">群周报·Wxx.md</div>
+            <div class="component-desc">聚合的周度总结报告</div>
+            <div style="margin-top: 6px;"><span class="badge">按需生成</span></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 9. 隐私与安全 ===== -->
+      <div class="section">
+        <div class="section-label">09 / 隐私与安全</div>
+        <div class="two-col">
+          <div class="component">
+            <div class="component-label">gitignore 防护</div>
+            <div class="component-desc">
+              排除项: config.local.md、.env、memory/、temp/、reports/、__pycache__/<br>
+              确保敏感数据不进入版本控制。
+            </div>
+          </div>
+          <div class="component">
+            <div class="component-label">privacy_scanner.py</div>
+            <div class="component-desc">
+              提交前钩子。扫描暂存文件中的:<br>
+              API 密钥 · 群聊 ID · 手机号 · 本地文件路径<br>
+              检测到违规时阻止提交。
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="component">
+            <div class="component-label">config_loader.py — 隐私守卫</div>
+            <div class="component-desc">
+              加载配置时若检测到未替换的占位符 <code style="font-family: var(--font-mono); font-size: 11px;">${...}</code>，将抛出 <code style="font-family: var(--font-mono); font-size: 11px;">PrivacyError</code> 异常。防止模板内容泄漏到运行时。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 10. 外部依赖 ===== -->
+      <div class="section">
+        <div class="section-label">10 / 外部依赖</div>
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>依赖</th>
+              <th>类型</th>
+              <th>用途</th>
+              <th>端点 / 路径</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>WeFlow</td>
+              <td><span class="badge">HTTP API</span></td>
+              <td>微信消息提取</td>
+              <td>127.0.0.1:5031</td>
+            </tr>
+            <tr>
+              <td>视觉 API (DMX)</td>
+              <td><span class="badge">OpenAI 兼容</span></td>
+              <td>图片内容分析</td>
+              <td>dmxapi.cn (qwen3.5-flash)</td>
+            </tr>
+            <tr>
+              <td>飞书多维表格</td>
+              <td><span class="badge">CLI 工具</span></td>
+              <td>上传资源/工程问题记录</td>
+              <td>lark-cli.cmd</td>
+            </tr>
+            <tr>
+              <td>quick-img 技能</td>
+              <td><span class="badge">Claude 技能</span></td>
+              <td>可视化报告卡片生成</td>
+              <td>Claude Code 技能</td>
+            </tr>
+            <tr>
+              <td>MCP 视觉服务</td>
+              <td><span class="badge">MCP 服务</span></td>
+              <td>子代理图片分析</td>
+              <td>mcp__zai-mcp-server</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 页脚 -->
+      <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--c-text-sub);">
+          G:\code_library\claude-skill-qunribao\blueprint-zh.html
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--c-text-sub);">
+          生成于 2026-04-10 · Blueprinter v1.0
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
