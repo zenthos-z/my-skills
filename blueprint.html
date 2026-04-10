@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>qunribao - Architecture Blueprint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --c-bg: #f8fafc;
+      --c-canvas: #ffffff;
+      --c-border: #cbd5e1;
+      --c-border-dark: #94a3b8;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      --c-accent: #0f172a;
+      --font-ui: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--c-bg);
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    .diagram-container { max-width: 1200px; margin: 0 auto; }
+
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-border);
+      padding: 32px;
+    }
+
+    .diagram-header {
+      border-bottom: 1px solid var(--c-border);
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+    }
+
+    .diagram-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--c-text-main);
+      margin-bottom: 4px;
+    }
+
+    .diagram-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Section */
+    .section { margin-bottom: 32px; }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    /* Component */
+    .component {
+      border: 1px solid var(--c-border);
+      padding: 14px 16px;
+      background: var(--c-canvas);
+    }
+
+    .component-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .component-value {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    .component-desc {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      padding: 2px 6px;
+      border: 1px solid var(--c-border);
+      color: var(--c-text-sub);
+      margin-right: 4px;
+    }
+
+    .badge-solid {
+      background: var(--c-text-main);
+      color: var(--c-canvas);
+      border-color: var(--c-text-main);
+    }
+
+    /* Arrow connector via CSS */
+    .flow-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .flow-step {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      flex-shrink: 0;
+      color: var(--c-border-dark);
+      font-family: var(--font-mono);
+      font-size: 16px;
+      position: relative;
+    }
+
+    /* Pipeline grid */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr;
+      align-items: stretch;
+    }
+
+    .pipeline-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--c-border-dark);
+      font-size: 18px;
+    }
+
+    /* Sub-steps grid */
+    .substeps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .substep {
+      border: 1px solid var(--c-border);
+      padding: 10px 12px;
+      background: var(--c-canvas);
+    }
+
+    .substep-number {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      margin-bottom: 2px;
+    }
+
+    .substep-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    .substep-script {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--c-text-sub);
+      margin-top: 2px;
+    }
+
+    /* Directory tree */
+    .dir-tree {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--c-text-main);
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .dir-tree .dir { font-weight: 500; }
+    .dir-tree .file { color: var(--c-text-sub); }
+    .dir-tree .comment { color: #94a3b8; font-size: 10px; }
+
+    /* Config table */
+    .config-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .config-table th {
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--c-border);
+      color: var(--c-text-sub);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 500;
+    }
+
+    .config-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--c-border);
+      color: var(--c-text-main);
+    }
+
+    .config-table tr:last-child td { border-bottom: none; }
+
+    /* Topic badges */
+    .topic-badges {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .topic-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--c-border);
+      padding: 8px 14px;
+    }
+
+    .topic-icon {
+      font-size: 14px;
+    }
+
+    .topic-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-main);
+    }
+
+    .topic-desc {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      color: var(--c-text-sub);
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--c-border);
+      margin: 24px 0;
+    }
+
+    /* Two column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* Full width box with inner content */
+    .box-outline {
+      border: 1px solid var(--c-border);
+      padding: 16px;
+      position: relative;
+    }
+
+    .box-title {
+      position: absolute;
+      top: -8px;
+      left: 12px;
+      background: var(--c-canvas);
+      padding: 0 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* SVG connectors */
+    svg.connector-svg {
+      width: 100%;
+      overflow: visible;
+    }
+
+    /* Three-col for agents */
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Config priority chain */
+    .priority-chain {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .priority-item {
+      padding: 8px 14px;
+      border: 1px solid var(--c-border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-main);
+    }
+
+    .priority-item.highest {
+      background: var(--c-text-main);
+      color: var(--c-canvas);
+      border-color: var(--c-text-main);
+    }
+
+    .priority-arrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-text-sub);
+      padding: 0 8px;
+    }
+
+    /* Memory lifecycle */
+    .memory-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 0;
+    }
+
+    .memory-step {
+      border: 1px solid var(--c-border);
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    .memory-connector {
+      color: var(--c-border-dark);
+      font-size: 16px;
+      padding: 0 4px;
+    }
+
+    /* Report outputs */
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-container">
+    <div class="diagram-canvas">
+      <!-- HEADER -->
+      <div class="diagram-header">
+        <div class="diagram-title">qunribao (群日报) — Claude Code Skill Architecture</div>
+        <div class="diagram-subtitle">System Blueprint / v1.0 / WeChat Group Daily Report Generator</div>
+      </div>
+
+      <!-- ===== 1. SYSTEM OVERVIEW ===== -->
+      <div class="section">
+        <div class="section-label">01 / System Overview</div>
+        <div style="border: 1px solid var(--c-border); padding: 20px; position: relative;">
+          <div class="box-title">Data Flow Pipeline</div>
+
+          <!-- Main pipeline: 4 major stages -->
+          <div class="pipeline-grid" style="margin-top: 4px;">
+            <!-- Stage 1: Data Source -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">Data Source</div>
+              <div class="component-value">WeFlow API</div>
+              <div class="component-desc">localhost:5031<br>WeChat message extraction</div>
+            </div>
+
+            <div class="pipeline-arrow">→</div>
+
+            <!-- Stage 2: Processing -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">Processing</div>
+              <div class="component-value">Python Scripts</div>
+              <div class="component-desc">Fetch · Enrich · Validate<br>Image analysis (Vision API)</div>
+            </div>
+
+            <div class="pipeline-arrow">→</div>
+
+            <!-- Stage 3: Analysis -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">LLM Analysis</div>
+              <div class="component-value">Claude</div>
+              <div class="component-desc">Report · Resources<br>Issues · Memory update</div>
+            </div>
+
+            <div class="pipeline-arrow">→</div>
+
+            <!-- Stage 4: Output -->
+            <div class="component" style="text-align: center; border-color: var(--c-border-dark);">
+              <div class="component-label">Output</div>
+              <div class="component-value">Multi-format</div>
+              <div class="component-desc">Markdown · JSON<br>Feishu Bitable · Image</div>
+            </div>
+          </div>
+
+          <!-- External deps row -->
+          <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+            <span class="badge">WeChat Group</span>
+            <span class="badge">Vision API (qwen3.5-flash)</span>
+            <span class="badge">Feishu / Lark Bitable</span>
+            <span class="badge">lark-cli</span>
+            <span class="badge">quick-img skill</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 2. DIRECTORY STRUCTURE ===== -->
+      <div class="section">
+        <div class="section-label">02 / Project Structure</div>
+        <div class="two-col">
+          <div class="dir-tree" style="border: 1px solid var(--c-border); padding: 16px;">
+<span class="dir">claude-skill-qunribao/</span>
+├── <span class="file">SKILL.md</span>           <span class="comment">Skill registration & config</span>
+├── <span class="file">README.md</span>          <span class="comment">Documentation</span>
+├── <span class="dir">agents/</span>
+│   ├── <span class="file">daily_batch_agent.md</span> <span class="comment">Batch multi-day reports</span>
+│   └── <span class="file">ImageAnalyzer.md</span>     <span class="comment">Vision subagent</span>
+├── <span class="dir">assets/</span>
+│   ├── <span class="file">.env</span>              <span class="comment">DMX_API_KEY</span>
+│   └── <span class="file">config.local.md</span>    <span class="comment">Local config (gitignored)</span>
+└── <span class="dir">references/</span>
+    ├── <span class="file">daily_workflow.md</span>   <span class="comment">10-step pipeline spec</span>
+    ├── <span class="file">daily_report.md</span>     <span class="comment">Report prompt template</span>
+    ├── <span class="file">weekly_report.md</span>    <span class="comment">Weekly report template</span>
+    ├── <span class="file">resource_extraction.md</span>
+    ├── <span class="file">engineering_issues.md</span>
+    ├── <span class="file">memory_format.md</span>    <span class="comment">Topic tracking spec</span>
+    ├── <span class="file">onboarding_guide.md</span> <span class="comment">Setup wizard</span>
+    ├── <span class="file">debug_log_template.md</span>
+    └── <span class="dir">shared/</span>
+        ├── <span class="file">topic_hierarchy.md</span>
+        ├── <span class="file">writing_standards.md</span>
+        └── <span class="file">member_roles.md</span>
+          </div>
+
+          <div class="dir-tree" style="border: 1px solid var(--c-border); padding: 16px;">
+<span class="dir">scripts/</span>
+├── <span class="file">init.py</span>              <span class="comment">Interactive setup wizard</span>
+├── <span class="file">config_loader.py</span>      <span class="comment">Multi-source config loader</span>
+├── <span class="file">weflow_client.py</span>      <span class="comment">WeFlow HTTP client</span>
+├── <span class="file">chat_context.py</span>       <span class="comment">Chat → markdown context</span>
+├── <span class="file">describe_images.py</span>    <span class="comment">Async Vision API analysis</span>
+├── <span class="file">replace_images.py</span>     <span class="comment">Merge image descriptions</span>
+├── <span class="file">json_validator.py</span>     <span class="comment">JSON Schema validation</span>
+├── <span class="file">json_to_md.py</span>         <span class="comment">JSON → markdown tables</span>
+├── <span class="file">feishu_upload.py</span>      <span class="comment">Feishu Bitable payloads</span>
+├── <span class="file">memory_filename.py</span>    <span class="comment">Versioned filename gen</span>
+└── <span class="file">privacy_scanner.py</span>    <span class="comment">Pre-commit secret scanner</span>
+
+<span style="margin-top: 12px; display: block;">
+<span class="dir">runtime dirs (gitignored)</span>
+├── <span class="file">reports/</span>   <span class="comment">JSON + Markdown output</span>
+├── <span class="file">memory/</span>    <span class="comment">Topic tracker files</span>
+└── <span class="file">temp/</span>      <span class="comment">Chat context cache</span>
+</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 3. DAILY WORKFLOW (10 STEPS) ===== -->
+      <div class="section">
+        <div class="section-label">03 / Daily Workflow — 10-Step Pipeline</div>
+
+        <!-- Steps 1-5 -->
+        <div class="substeps">
+          <div class="substep">
+            <div class="substep-number">STEP 01</div>
+            <div class="substep-name">Load Config</div>
+            <div class="substep-script">config_loader.py</div>
+            <div class="component-desc">env > config.local.md > fallback</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 02</div>
+            <div class="substep-name">Fetch Chat</div>
+            <div class="substep-script">chat_context.py</div>
+            <div class="component-desc">WeFlow API → chat_context.md</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 03</div>
+            <div class="substep-name">Image Analysis</div>
+            <div class="substep-script">describe_images.py</div>
+            <div class="component-desc">Vision API → descriptions.json</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 04</div>
+            <div class="substep-name">Load Context</div>
+            <div class="substep-script">references/shared/*</div>
+            <div class="component-desc">Topics + Standards + Memory</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 05</div>
+            <div class="substep-name">Daily Report</div>
+            <div class="substep-script">Claude → JSON → validate → MD</div>
+            <div class="component-desc">json_validator + json_to_md</div>
+          </div>
+        </div>
+
+        <!-- Steps 6-10 -->
+        <div class="substeps" style="margin-top: 12px;">
+          <div class="substep">
+            <div class="substep-number">STEP 06</div>
+            <div class="substep-name">Resources</div>
+            <div class="substep-script">resource_extraction.md</div>
+            <div class="component-desc">JSON schema → validate → MD</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 07</div>
+            <div class="substep-name">Issues</div>
+            <div class="substep-script">engineering_issues.md</div>
+            <div class="component-desc">JSON schema → validate → MD</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 08</div>
+            <div class="substep-name">Feishu Upload</div>
+            <div class="substep-script">feishu_upload.py</div>
+            <div class="component-desc">Build Bitable payloads (CHECKPOINT)</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 09</div>
+            <div class="substep-name">Update Memory</div>
+            <div class="substep-script">memory_filename.py</div>
+            <div class="component-desc">Merge + version + cleanup (≤10)</div>
+          </div>
+          <div class="substep">
+            <div class="substep-number">STEP 10</div>
+            <div class="substep-name">Report Image</div>
+            <div class="substep-script">quick-img skill</div>
+            <div class="component-desc">Visual report card (optional)</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 4. AGENTS & SUBAGENTS ===== -->
+      <div class="section">
+        <div class="section-label">04 / Agents &amp; Subagents</div>
+        <div class="three-col">
+          <div class="component">
+            <div class="component-label">Main Skill</div>
+            <div class="component-value">qunribao (SKILL.md)</div>
+            <div class="component-desc">Entry point. Reads config, orchestrates the 10-step daily workflow. Single-day or batch mode.</div>
+            <div style="margin-top: 8px;">
+              <span class="badge badge-solid">orchestrator</span>
+              <span class="badge">commands: /qunribao</span>
+            </div>
+          </div>
+          <div class="component">
+            <div class="component-label">Batch Agent</div>
+            <div class="component-value">daily_batch_agent.md</div>
+            <div class="component-desc">Serially executes daily workflow across a date range. Skippable resource/issue steps.</div>
+            <div style="margin-top: 8px;">
+              <span class="badge">date range loop</span>
+              <span class="badge">error recovery</span>
+            </div>
+          </div>
+          <div class="component">
+            <div class="component-label">Vision Subagent</div>
+            <div class="component-value">ImageAnalyzer.md</div>
+            <div class="component-desc">Batch image analysis via MCP vision tool. Writes descriptions to JSON for merge.</div>
+            <div style="margin-top: 8px;">
+              <span class="badge">mcp vision tool</span>
+              <span class="badge">batch JSON output</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 5. CONFIG PRIORITY ===== -->
+      <div class="section">
+        <div class="section-label">05 / Configuration Priority Chain</div>
+        <div class="priority-chain" style="justify-content: center;">
+          <div class="priority-item highest">QUNRIBAO_* env vars</div>
+          <div class="priority-arrow">overwrites</div>
+          <div class="priority-item">config.local.md</div>
+          <div class="priority-arrow">overwrites</div>
+          <div class="priority-item">config.json fallback</div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <table class="config-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Example Value</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>weflow.baseUrl</td>
+                <td>http://127.0.0.1:5031</td>
+                <td>WeFlow API endpoint</td>
+              </tr>
+              <tr>
+                <td>weflow.chatroomId</td>
+                <td>45041645858@chatroom</td>
+                <td>Target WeChat group</td>
+              </tr>
+              <tr>
+                <td>outputDir</td>
+                <td>reports/</td>
+                <td>JSON + Markdown output</td>
+              </tr>
+              <tr>
+                <td>memoryDir</td>
+                <td>memory/</td>
+                <td>Topic tracker storage</td>
+              </tr>
+              <tr>
+                <td>managers</td>
+                <td>瞿炜, Li老师, 梗直哥</td>
+                <td>High-weight participants</td>
+              </tr>
+              <tr>
+                <td>feishu.bitableAppToken</td>
+                <td>XgifbiqYMag2...</td>
+                <td>Bitable destination</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 6. TOPIC HIERARCHY ===== -->
+      <div class="section">
+        <div class="section-label">06 / Topic Hierarchy System</div>
+        <div class="topic-badges">
+          <div class="topic-badge">
+            <span class="topic-icon">⭐</span>
+            <div>
+              <div class="topic-name">Star</div>
+              <div class="topic-desc">Explicit long-term core themes</div>
+            </div>
+          </div>
+          <div class="topic-badge">
+            <span class="topic-icon">🔄</span>
+            <div>
+              <div class="topic-name">Cycle</div>
+              <div class="topic-desc">Multi-day recurring topics</div>
+            </div>
+          </div>
+          <div class="topic-badge">
+            <span class="topic-icon">💡</span>
+            <div>
+              <div class="topic-name">Bulb</div>
+              <div class="topic-desc">Scattered valuable insights</div>
+            </div>
+          </div>
+          <div class="topic-badge">
+            <span class="topic-icon">✅</span>
+            <div>
+              <div class="topic-name">Check</div>
+              <div class="topic-desc">Resolved / archived topics</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 7. MEMORY LIFECYCLE ===== -->
+      <div class="section">
+        <div class="section-label">07 / Memory Lifecycle</div>
+        <div style="border: 1px solid var(--c-border); padding: 20px;">
+          <div class="memory-flow">
+            <div class="memory-step">
+              <div class="component-label">Read</div>
+              <div class="component-value" style="font-size: 11px;">topic_tracker_latest.md</div>
+            </div>
+            <div class="memory-connector">→</div>
+            <div class="memory-step">
+              <div class="component-label">Merge</div>
+              <div class="component-value" style="font-size: 11px;">Old + new conclusions</div>
+            </div>
+            <div class="memory-connector">→</div>
+            <div class="memory-step">
+              <div class="component-label">Compress</div>
+              <div class="component-value" style="font-size: 11px;">&lt;10,000 tokens budget</div>
+            </div>
+            <div class="memory-connector">→</div>
+            <div class="memory-step">
+              <div class="component-label">Write</div>
+              <div class="component-value" style="font-size: 11px;">topic_tracker_YYYYMMDD_NNNNNN.md</div>
+            </div>
+          </div>
+          <div style="margin-top: 16px; display: flex; gap: 16px; justify-content: center;">
+            <span class="badge">auto-cleanup: keep ≤ 10 versions</span>
+            <span class="badge">token budget: &lt;10K</span>
+            <span class="badge">older conclusions compressed</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 8. OUTPUT FORMATS ===== -->
+      <div class="section">
+        <div class="section-label">08 / Report Outputs</div>
+        <div class="output-grid">
+          <div class="component" style="text-align: center;">
+            <div class="component-label">Daily Report</div>
+            <div class="component-value">群日报·YYYY-MM-DD.md</div>
+            <div class="component-desc">Overview · Topics · Trends · Key members</div>
+            <div style="margin-top: 6px;"><span class="badge badge-solid">primary</span></div>
+          </div>
+          <div class="component" style="text-align: center;">
+            <div class="component-label">Resources</div>
+            <div class="component-value">resources·YYYY-MM-DD.md</div>
+            <div class="component-desc">Links · Tools · Articles shared</div>
+            <div style="margin-top: 6px;"><span class="badge">optional</span></div>
+          </div>
+          <div class="component" style="text-align: center;">
+            <div class="component-label">Engineering Issues</div>
+            <div class="component-value">issues·YYYY-MM-DD.md</div>
+            <div class="component-desc">Bugs · Solutions · Status tracking</div>
+            <div style="margin-top: 6px;"><span class="badge">optional</span></div>
+          </div>
+          <div class="component" style="text-align: center;">
+            <div class="component-label">Weekly Report</div>
+            <div class="component-value">群周报·Wxx.md</div>
+            <div class="component-desc">Aggregated weekly summary</div>
+            <div style="margin-top: 6px;"><span class="badge">on-demand</span></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 9. PRIVACY & SECURITY ===== -->
+      <div class="section">
+        <div class="section-label">09 / Privacy &amp; Security</div>
+        <div class="two-col">
+          <div class="component">
+            <div class="component-label">gitignore Protection</div>
+            <div class="component-desc">
+              Excludes: config.local.md, .env, memory/, temp/, reports/, __pycache__/<br>
+              No sensitive data enters version control.
+            </div>
+          </div>
+          <div class="component">
+            <div class="component-label">privacy_scanner.py</div>
+            <div class="component-desc">
+              Pre-commit hook. Scans staged files for:<br>
+              API keys · Group IDs · Phone numbers · Local file paths<br>
+              Blocks commit if violations detected.
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="component">
+            <div class="component-label">config_loader.py — Privacy Guard</div>
+            <div class="component-desc">
+              Raises <code style="font-family: var(--font-mono); font-size: 11px;">PrivacyError</code> if unsubstituted placeholders like <code style="font-family: var(--font-mono); font-size: 11px;">${...}</code> are detected in loaded config. Prevents template leakage into runtime.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- ===== 10. EXTERNAL DEPENDENCIES ===== -->
+      <div class="section">
+        <div class="section-label">10 / External Dependencies</div>
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Dependency</th>
+              <th>Type</th>
+              <th>Purpose</th>
+              <th>Endpoint / Binary</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>WeFlow</td>
+              <td><span class="badge">HTTP API</span></td>
+              <td>WeChat message extraction</td>
+              <td>127.0.0.1:5031</td>
+            </tr>
+            <tr>
+              <td>Vision API (DMX)</td>
+              <td><span class="badge">OpenAI-compat</span></td>
+              <td>Image content analysis</td>
+              <td>dmxapi.cn (qwen3.5-flash)</td>
+            </tr>
+            <tr>
+              <td>Feishu Bitable</td>
+              <td><span class="badge">CLI tool</span></td>
+              <td>Upload resource/issue records</td>
+              <td>lark-cli.cmd</td>
+            </tr>
+            <tr>
+              <td>quick-img skill</td>
+              <td><span class="badge">Claude Skill</span></td>
+              <td>Visual report card generation</td>
+              <td>Claude Code skill</td>
+            </tr>
+            <tr>
+              <td>MCP Vision</td>
+              <td><span class="badge">MCP Server</span></td>
+              <td>Subagent image analysis</td>
+              <td>mcp__zai-mcp-server</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--c-text-sub);">
+          G:\code_library\claude-skill-qunribao\blueprint.html
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--c-text-sub);">
+          Generated 2026-04-10 · Blueprinter v1.0
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

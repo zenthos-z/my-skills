@@ -94,6 +94,8 @@ class ConfigLoader:
             '人员': 'personnel',
             '价值议题': 'valueTopics',
             '工程分组': 'engineeringGroups',
+            '飞书': 'feishu',
+            '上次任务': 'lastTask',
         }
 
         for line in lines:

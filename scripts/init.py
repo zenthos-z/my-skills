@@ -92,10 +92,12 @@ class InitWizard:
         print()
         print("[WeFlow API 配置]")
         base_url = input("WeFlow服务地址 [http://127.0.0.1:5031]: ").strip() or "http://127.0.0.1:5031"
+        token = input("WeFlow API Token（留空则不使用鉴权）: ").strip() or None
         config['datasource'] = {
             'type': 'weflow',
             'baseUrl': base_url,
-            'chatroomId': config['chatroomId']
+            'chatroomId': config['chatroomId'],
+            'token': token,
         }
 
         print()
@@ -167,6 +169,8 @@ class InitWizard:
         lines.append("## WeFlow API")
         lines.append(f"- baseUrl: {ds.get('baseUrl', '')}")
         lines.append(f"- chatroomId: {config.get('chatroomId', '')}")
+        if ds.get('token'):
+            lines.append(f"- token: {ds['token']}")
         lines.append("")
         lines.append("## 目录")
         lines.append(f"- outputDir: {config.get('outputDir', '')}")

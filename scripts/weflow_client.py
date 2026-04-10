@@ -36,20 +36,24 @@ class WeFlowClient:
     - 链接卡片解析
     """
 
-    def __init__(self, base_url: str = "http://127.0.0.1:5031", timeout: int = 30):
+    def __init__(self, base_url: str = "http://127.0.0.1:5031", timeout: int = 30, token: Optional[str] = None):
         """初始化客户端
 
         Args:
             base_url: WeFlow API 基础地址
             timeout: 请求超时时间（秒）
+            token: API 鉴权 token（可选）
         """
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update({
+        headers = {
             'Accept': 'application/json',
             'User-Agent': 'qunribao/1.0'
-        })
+        }
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+        self.session.headers.update(headers)
 
     def health_check(self) -> bool:
         """检查 API 服务是否可用

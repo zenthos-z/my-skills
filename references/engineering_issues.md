@@ -2,6 +2,50 @@
 
 **时间段限定：{{DATE}}**
 
+## JSON 输出要求（第一步）
+
+**必须首先输出符合以下 Schema 的 JSON 数据**，然后再生成 Markdown 表格：
+
+```json
+{
+  "type": "engineering",
+  "date_range": ["2026-04-06", "2026-04-08"],
+  "issues": [
+    {
+      "datetime": "2026-04-08 14:24",
+      "group": "开发与调试工具",
+      "description": "问题描述",
+      "solution": "解决方案",
+      "tools": "关键操作/工具",
+      "status": "🔄",
+      "status_desc": "方案待验证",
+      "source": "成员1、成员2"
+    }
+  ]
+}
+```
+
+**字段说明**：
+- `type`: 固定值 `"engineering"`
+- `date_range`: 日期范围数组，格式 `YYYY-MM-DD`
+- `issues`: 问题数组
+  - `datetime`: 日期时间，格式 `YYYY-MM-DD HH:MM`
+  - `group`: 问题分组，枚举值：部署与基础设施、开发与调试工具、记忆与进化机制、生态与工具链、成本控制与性能优化、安全与合规、Harness Engineering
+  - `description`: 问题描述
+  - `solution`: 解决方案
+  - `tools`: 关键操作/工具
+  - `status`: 状态，枚举值：✅ / 📝 / 🔄 / ⚠️
+  - `status_desc`: 状态描述（3-6个字）
+  - `source`: 信息来源（成员姓名）
+
+**状态说明**：
+- ✅ 已解决/已验证/最佳实践
+- 📝 已知问题/方法论/设计如此
+- 🔄 方案待实现/待验证
+- ⚠️ 待解决/需关注
+
+---
+
 **问题分组可选项：**
 
 部署与基础设施

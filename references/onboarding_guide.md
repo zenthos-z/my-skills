@@ -49,7 +49,7 @@ else:
 > 这是唯一必须手动提供信息的步骤。
 
 ```
-AskUserQuestion (2 questions):
+AskUserQuestion (3 questions):
   Q1: "群聊 ID 是什么？"
       格式提示: "在 WeFlow 中打开目标群聊，群 ID 格式如 123456789@chatroom"
       类型: 填空题（用户自由输入）
@@ -60,11 +60,16 @@ AskUserQuestion (2 questions):
         - "自定义地址"
       类型: 选择题
       → 选"自定义地址"时追问具体地址
+
+  Q3: "WeFlow API Token？"
+      格式提示: "WeFlow 现已要求 API 鉴权，请输入 Token（可在 WeFlow 设置中查看）"
+      类型: 填空题（用户自由输入）
 ```
 
 **收集结果**：
 - `chatroomId`: Q1 的输入
 - `baseUrl`: Q2 选择的地址（默认 `http://127.0.0.1:5031`）
+- `token`: Q3 的输入（可选，留空则不鉴权）
 
 ---
 
@@ -305,6 +310,44 @@ AskUserQuestion (1 question):
 
 ---
 
+### Step 5b/7：默认任务配置
+
+> 设置每次生成日报时默认执行哪些步骤，后续可通过 `/qunribao daily` 沿用。
+
+```
+AskUserQuestion (1 question):
+  Q1: "你通常需要生成哪些内容？（可多选）"
+      选项 (multiSelect):
+        - "资源提取" ← 默认选中
+        - "工程问题归纳" ← 默认选中
+        - "飞书上传" ← 默认选中
+        - "日报配图" ← 默认选中
+      类型: 多选题
+
+  → 如果选了"日报配图":
+  AskUserQuestion (1 question):
+    Q2: "配图参数？"
+        选项:
+          - "默认（3张, 4:5, 2K）" ← 推荐
+          - "自定义参数"
+
+  → 选"自定义参数"时追问:
+  AskUserQuestion (1 question):
+    Q3: "请输入配图参数（格式：数量,比例,尺寸，如 3,4:5,2K）"
+        类型: 填空题
+```
+
+**收集结果**（将作为 `## 上次任务` section 写入 config.local.md）：
+- `resource`: 是否选中资源提取
+- `engineering`: 是否选中工程问题
+- `feishuUpload`: 是否选中飞书上传
+- `generateImage`: 是否选中日报配图
+- `imageCount`: 配图数量（默认 3）
+- `imageRatio`: 配图比例（默认 4:5）
+- `imageSize`: 配图尺寸（默认 2K）
+
+---
+
 ## 确认与写入
 
 所有步骤完成后，展示配置摘要并确认：
@@ -324,6 +367,7 @@ AskUserQuestion (1 question):
 | 议题 | 使用默认模板 |
 | 议题知识库 | ✅ 已填写 / ⚠️ 空模板待补充 |
 | 图片识别 | 智谱 GLM-4.6V-Flash（默认）/ {自定义模型} |
+| 任务配置 | 资源+工程+飞书+配图（全部启用）/ 自定义组合 |
 
 ⚠️ 共享文件状态：
 - references/shared/topic_hierarchy.md: ✅ 已生成 / ⚠️ 空模板，需手动补充议题详细描述
@@ -376,6 +420,18 @@ AskUserQuestion:
 - model: {model}
 - apiKeyEnv: {env_var}
 - concurrency: {N}
+
+## 上次任务
+- lastRun: {当前时间}
+- lastDate:
+- command: daily
+- resource: {true/false}
+- engineering: {true/false}
+- feishuUpload: {true/false}
+- generateImage: {true/false}
+- imageCount: {N}
+- imageRatio: {比例}
+- imageSize: {尺寸}
 ```
 
 写入后告知用户：

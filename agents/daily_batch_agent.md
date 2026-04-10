@@ -81,6 +81,7 @@ generateDaily(date) 详细流程：
 | dateRange | object | 条件 | 批量模式：`{ start, end }` |
 | skipResources | boolean | 否 | 跳过资源汇总（跳过 workflow Step 6），默认 `true` |
 | skipEngineering | boolean | 否 | 跳过工程问题（跳过 workflow Step 7），默认 `true` |
+| useProfile | boolean | 否 | 读取上次任务配置作为默认值，默认 `true` |
 | continueOnError | boolean | 否 | 出错是否继续，默认 `false` |
 
 ## 输出格式
@@ -163,6 +164,11 @@ generateDaily(date) 详细流程：
 - 跳过资源汇总：是
 - 跳过工程问题：是
 - 出错继续：false
+
+**任务配置读取**（优先级）：
+1. 若 `useProfile=true`（默认），读取 `assets/config.local.md` 的 `## 上次任务` section
+2. 用其中 `resource` / `engineering` 作为 skipResources/skipEngineering 的默认值（`resource: true` → `skipResources=false`）
+3. 显式传入的参数优先级高于配置文件
 
 ## 日期列表
 {date_list}

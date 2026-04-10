@@ -200,7 +200,7 @@ class ChatContextGenerator:
         start: datetime,
         end: datetime,
         output_path: str,
-        inline_images: bool = True,
+        inline_images: bool = False,
         include_stats: bool = False,
         sender_filter: Optional[str] = None
     ) -> str:
@@ -210,7 +210,7 @@ class ChatContextGenerator:
             start: 开始时间
             end: 结束时间
             output_path: 输出文件路径
-            inline_images: 是否将图片嵌入为 file:// 路径
+            inline_images: 是否将图片嵌入为 file:// 路径（默认 False，使用 describe 模式）
             include_stats: 是否包含统计信息
             sender_filter: 发送者过滤（模糊匹配）
 
@@ -339,7 +339,7 @@ class ChatContextGenerator:
 
         return content
 
-    def _format_message(self, msg: Dict[str, Any], inline_images: bool = True) -> str:
+    def _format_message(self, msg: Dict[str, Any], inline_images: bool = False) -> str:
         """格式化单条消息
 
         三种特殊类型独立处理：
@@ -756,7 +756,7 @@ def generate_chat_context(
     config: Dict[str, Any],
     date: datetime,
     output_dir: str,
-    inline_images: bool = True,
+    inline_images: bool = False,
     sender_filter: Optional[str] = None,
     include_stats: bool = False
 ) -> str:
@@ -766,7 +766,7 @@ def generate_chat_context(
         config: 配置字典
         date: 日期
         output_dir: 输出目录
-        inline_images: 是否嵌入图片
+        inline_images: 是否嵌入图片（默认 False，使用 describe 模式）
         sender_filter: 发送者过滤
         include_stats: 是否包含统计信息
 
@@ -776,7 +776,8 @@ def generate_chat_context(
     # 创建客户端
     weflow_config = config.get("weflow", {})
     client = WeFlowClient(
-        base_url=weflow_config.get("baseUrl", "http://127.0.0.1:5031")
+        base_url=weflow_config.get("baseUrl", "http://127.0.0.1:5031"),
+        token=weflow_config.get("token")
     )
 
     # 创建生成器
@@ -816,8 +817,8 @@ if __name__ == "__main__":
     parser.add_argument('--start', help='开始时间 (YYYY-MM-DD HH:MM)')
     parser.add_argument('--end', help='结束时间 (YYYY-MM-DD HH:MM)')
     parser.add_argument('--output', '-o', help='输出目录，默认使用配置中的 tempDir')
-    parser.add_argument('--describe', action='store_true',
-                       help='使用 describe 模式（不嵌入图片）')
+    parser.add_argument('--direct', action='store_true',
+                       help='使用 direct 模式（嵌入图片为 file:// 路径，不可靠）')
     parser.add_argument('--sender', help='按发送者名称过滤（模糊匹配）')
     parser.add_argument('--stats', action='store_true', help='显示统计信息')
 
@@ -842,7 +843,7 @@ if __name__ == "__main__":
 
     # 确定输出目录和图片模式
     output_dir = args.output or config.get('tempDir', 'temp')
-    inline_images = not args.describe
+    inline_images = args.direct
 
     # 检查 WeFlow 配置（二次校验，提供友好错误提示）
     weflow_config = config.get('weflow', {})
@@ -852,7 +853,8 @@ if __name__ == "__main__":
 
     # 创建客户端和生成器
     client = WeFlowClient(
-        base_url=weflow_config.get('baseUrl', 'http://127.0.0.1:5031')
+        base_url=weflow_config.get('baseUrl', 'http://127.0.0.1:5031'),
+        token=weflow_config.get('token')
     )
 
     generator = ChatContextGenerator(
