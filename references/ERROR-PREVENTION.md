@@ -50,6 +50,7 @@ B["Display Text B"]
 |-----------|---------|----------|
 | Quotes `"` | Breaks syntax | Use `『』` or avoid |
 | Parens `()` | May conflict | Use `「」` or avoid |
+| Curly `{}` | Reserved for subgraph/shape syntax | Use `「」` or remove |
 | `number. space` | List parsing | Use `①`, `(1)`, or `1.Text` |
 | Spaces in names | Reference issues | Use `id["Name"]` format |
 

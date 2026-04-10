@@ -1,6 +1,6 @@
 ---
 name: mermaid-pro
-description: Professional Mermaid diagrams for architecture visualization and process documentation. Ideal for creating flowcharts, sequence diagrams, class diagrams, ERD schemas, and C4 architecture diagrams with built-in syntax validation.
+description: Professional Mermaid diagrams for architecture visualization and process documentation. Use when user mentions mermaid, flowchart (流程图), sequence diagram (时序图), class diagram (类图), ERD (实体关系图), C4 diagram (架构图), state diagram (状态图), mindmap (思维导图), or needs to create technical diagrams with built-in syntax validation.
 ---
 
 # Mermaid Pro
@@ -13,7 +13,27 @@ Generate professional, visually appealing Mermaid diagrams with consistent styli
 2. **Select Type** → Choose diagram type (see table below)
 3. **Configure** → Set layout, detail level, and style
 4. **Generate** → Create syntax-safe code following Output Template
-5. **Style** → Apply colors using the Color Palette
+5. **Validate** → Run syntax validation (REQUIRED before output)
+6. **Export** → Write to document or render to SVG/PNG
+
+### Step 5: Validate (REQUIRED)
+
+**Before** writing to any file or generating images, you MUST validate the syntax:
+
+```bash
+node ~/.claude/skills/mermaid-pro/scripts/validate-mermaid.mjs "你的Mermaid代码"
+```
+
+- If `{"valid":true}` → proceed to export
+- If `{"valid":false}` → fix the error, then re-validate
+
+**Common validation errors:**
+| Error Type | Fix |
+|------------|-----|
+| `markdown_conflict` | Remove space after number: `1.Text` instead of `1. Text` |
+| `curly_brace_in_text` | Wrap in quotes: `A["path/{name}/"]` or remove `{}` |
+| `undefined_reference` | Check node IDs match between definition and reference |
+| `parse_error` | Check subgraph syntax, arrows, special characters |
 
 ## Diagram Types
 
@@ -120,8 +140,9 @@ Every diagram should follow this structure:
 flowchart TD
     %% 1. Direction declaration
 
-    %% 2. Node definitions
+    %% 2. Node definitions (with styling)
     Start([Start])
+    Process[Process]
 
     %% 3. Connections
     Start --> Process
@@ -129,6 +150,11 @@ flowchart TD
     %% 4. Style declarations (REQUIRED for professional output)
     style Start fill:#d3f9d8,stroke:#2f9e44,stroke-width:2px
     style Process fill:#e5dbff,stroke:#5f3dc4,stroke-width:2px
+```
+
+**After generating, ALWAYS validate before saving:**
+```bash
+node ~/.claude/skills/mermaid-pro/scripts/validate-mermaid.mjs "flowchart TD\n  Start --> Process"
 ```
 
 ## Complete Example
@@ -171,11 +197,13 @@ flowchart TD
     style G fill:#c5f6fa,stroke:#0c8599,stroke-width:2px
 ```
 
-## Quality Checklist
+## Quality Checklist (Pre-Export Validation)
 
-Before finalizing any diagram:
+Run this checklist **after Generate, before Export**:
 
+- [ ] Run `validate-mermaid.mjs` → returns `{"valid":true}`
 - [ ] No `1. ` pattern in node text (use `①`, `(1)`, or `Step 1:`)
+- [ ] No unescaped curly braces `{` `}` in node text (use quotes `"text"` or remove them)
 - [ ] Subgraphs with spaces use `id["Name"]` format
 - [ ] All node references use IDs, not display names
 - [ ] Direction explicitly set (`TD`, `LR`, etc.)

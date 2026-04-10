@@ -100,17 +100,25 @@ try {
 
   // Categorize common errors
   let errorType = 'syntax';
+  let friendlyMessage = errorMessage;
+
   if (errorMessage.includes('Unsupported markdown')) {
     errorType = 'markdown_conflict';
   } else if (errorMessage.includes('undefined')) {
     errorType = 'undefined_reference';
   } else if (errorMessage.includes('expecting')) {
     errorType = 'parse_error';
+  } else if (errorMessage.includes('DIAMOND_START') || errorMessage.includes('DIAMOND_STOP')) {
+    errorType = 'curly_brace_in_text';
+    friendlyMessage = 'Curly braces { } are reserved in Mermaid for subgraph/shape syntax. Wrap text in quotes like A["path/{name}/"] or remove them.';
+  } else if (errorMessage.includes('SQE') || errorMessage.includes('SQS')) {
+    errorType = 'quote_in_text';
+    friendlyMessage = 'Double quotes " in node text can cause issues. Use single quotes or wrap the entire text in square brackets with quotes: A["text with \\\"quotes\\\""].';
   }
 
   console.log(JSON.stringify({
     valid: false,
-    error: errorMessage,
+    error: friendlyMessage,
     errorType: errorType,
     rawError: err.message
   }));
