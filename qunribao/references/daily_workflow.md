@@ -240,6 +240,9 @@ Subagent 循环执行以下操作：
 ### Step 5.2：生成完整日报 MD
 
 1. 执行 `json_to_md.py --input <json_path> --output <table_md>` 生成表格部分
+
+   > **注意**：脚本输出路径中含中文文件名时，控制台显示可能乱码（`Ⱥ�ձ�`），但实际文件写入正确，不影响后续步骤。可忽略。
+
 2. 主 agent 读取表格 + chat_context + 共享内容，补充以下自由文本段落：
    - 概览（当日讨论主题、重要议题）
    - 讨论趋势（phase_features、open_issues）
@@ -382,6 +385,8 @@ python scripts/feishu_upload.py \
 
 用户确认后执行 lark-cli 命令上传到飞书多维表格。
 
+> **注意**：`feishu_upload.py` 生成的命令可能包含 `--id` 参数，但 `lark-cli api` 子命令不支持此参数。若执行报错 `unknown flag: --id`，移除该参数后重试。
+
 > **Skip 控制**：需同时满足 `feishu.upload=true`（系统配置）且 `runSteps.feishuUpload=true`（任务配置）。任一为 false 则跳过。
 
 ---
@@ -417,7 +422,7 @@ python scripts/feishu_upload.py \
 
 检测 quick-img 技能是否可用：
 1. 检查已加载的技能列表中是否包含 `quick-img`
-2. 或检查本地路径 `G:\code_library\quick-img\scripts\generate_image.py` 是否存在
+2. 或检查已安装的 `quick-img` 技能中 `scripts/generate_image.py` 是否存在
 
 **若 quick-img 不可用**：
 1. 停止配图步骤
@@ -429,6 +434,8 @@ python scripts/feishu_upload.py \
 
 使用 `assets/templates/日报配图提炼.md` 模板提炼日报核心内容。
 输出纯内容文件（仅结构化要点，不含风格指令），保存到 `{tempDir}/daily_card_content.txt`。
+
+> **注意**：该文件为新文件，但 Claude Code Write 工具要求先 Read 才能写入。需先用 Bash 创建空文件（`cat /dev/null > path`），再 Read，再 Write。
 
 **注意**：提炼内容不含风格指令，风格由 quick-img 的 `生图模板.txt` 包装。
 
@@ -445,3 +452,5 @@ python <quick-img-path>/scripts/generate_image.py \
 3 张图使用**完全相同的提示词**，供用户挑选最佳一张。
 
 生成后将图片移动到 `{outputDir}/daily/` 目录，按 `日报_YYYYMMDD_时间戳_序号.png` 命名。
+
+> **注意**：文件名含中文，bash `mv` 的 glob 模式可能无法匹配。应使用 for 循环 + Glob 获取的完整路径逐个移动，而非 `mv *通配符*`。
