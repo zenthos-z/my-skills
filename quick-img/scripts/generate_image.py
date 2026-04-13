@@ -202,7 +202,7 @@ def call_dmx_api(
             f"{base_url}{endpoint}",
             headers=headers,
             json=data,
-            timeout=120
+            timeout=300
         )
 
         if response.status_code != 200:

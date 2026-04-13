@@ -363,7 +363,7 @@ AskUserQuestion (1 question):
 | API 地址 | http://127.0.0.1:5031 |
 | 管理者 | 张三（项目发起人）、李四（技术指导） |
 | 班长 | 王五（班长） |
-| 报告目录 | G:\code_library\qunribao\reports |
+| 报告目录 | `<skill-parent>/reports`（配置时动态确定） |
 | 议题 | 使用默认模板 |
 | 议题知识库 | ✅ 已填写 / ⚠️ 空模板待补充 |
 | 图片识别 | 智谱 GLM-4.6V-Flash（默认）/ {自定义模型} |

@@ -122,7 +122,7 @@ class InitWizard:
         # 输出配置
         print()
         print("[输出配置]")
-        base_dir = str(self.skill_dir.parent.parent)  # G:\code_library\qunribao
+        base_dir = str(self.skill_dir.parent.parent)  # skill 根目录
         output_dir = input(f"报告输出目录 [{base_dir}\\reports]: ").strip()
         config['outputDir'] = output_dir or f"{base_dir}\\reports"
 
@@ -215,7 +215,7 @@ class InitWizard:
     def _setup_git_hooks(self):
         """设置git hooks"""
         # 项目根目录的 .githooks
-        project_root = self.skill_dir.parent.parent.parent  # G:\code_library\qunribao
+        project_root = self.skill_dir.parent.parent.parent  # monorepo 根目录或独立仓库根
         hooks_dir = project_root / ".githooks"
         hook_path = hooks_dir / "pre-commit"
 
