@@ -7,6 +7,36 @@ description: Professional Mermaid diagrams for architecture visualization and pr
 
 Generate professional, visually appealing Mermaid diagrams with consistent styling.
 
+## Initialization (First Run)
+
+On first invocation in a new session, check environment readiness before proceeding.
+
+### Step 0: Environment Check
+
+```bash
+node scripts/setup.mjs
+```
+
+- `{"ready":true,"features":{"validate":true,"export":true}}` → proceed to Workflow
+- `{"ready":true,"features":{"validate":true,"export":false}}` → validation works, image export unavailable (puppeteer/Chrome issue)
+- `{"ready":false}` → script auto-installs dependencies; if still failing, run manually: `cd scripts && npm install`
+
+**Node.js >= 18 required.**
+
+| Package | Purpose | Feature |
+|---------|---------|---------|
+| jsdom | Server-side DOM for mermaid parsing | Validation |
+| mermaid | Diagram syntax engine | Validation |
+| puppeteer | Headless Chrome rendering | Image Export (SVG/PNG) |
+
+### Skill Capabilities
+
+On first use, briefly inform the user:
+- **7 diagram types**: Flowchart, Sequence, Class, ERD, C4, State, Mindmap
+- **9-color semantic palette**: consistent professional styling (see Color Palette below)
+- **Built-in syntax validation**: catches errors before output
+- **Batch image export**: convert mermaid blocks in markdown to SVG/PNG
+
 ## Workflow
 
 1. **Analyze** → Understand the concept to visualize
@@ -15,6 +45,8 @@ Generate professional, visually appealing Mermaid diagrams with consistent styli
 4. **Generate** → Create syntax-safe code following Output Template
 5. **Validate** → Run syntax validation (REQUIRED before output)
 6. **Export** → Write to document or render to SVG/PNG
+
+> **Tip:** If this is the first use, run `node scripts/setup.mjs` to verify the environment (Step 0).
 
 ### Step 5: Validate (REQUIRED)
 
