@@ -43,6 +43,18 @@ def get_style_guide_path() -> str:
     return ""
 
 
+def render_style_template(template_path: str, content: str) -> str:
+    """将风格模板中的 {{content}} 替换为精炼内容，返回完整的生图提示词"""
+    if not template_path:
+        return content
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            template = f.read()
+        return template.replace("{{content}}", content)
+    except FileNotFoundError:
+        return content
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="组装生图 JSON 配置文件",
@@ -73,8 +85,9 @@ def main():
     temp_dir = config.get("tempDir", "temp")
     output_dir = config.get("outputDir", "reports/daily")
 
-    # 获取风格指南路径
-    style_guide = get_style_guide_path()
+    # 渲染风格模板：将精炼内容填入 {{content}}，得到完整提示词
+    style_guide_path = get_style_guide_path()
+    final_prompt = render_style_template(style_guide_path, args.prompt)
 
     # 合并：配置默认值 < CLI 参数覆盖
     image_count = args.count or last_task.get("imageCount", 1)
@@ -88,10 +101,9 @@ def main():
     date_str = args.date.replace("-", "")
     filename = f"群日报-{args.date}"
 
-    # 组装 JSON
+    # 组装 JSON（prompt 已包含风格模板渲染结果，不再单独传 style_guide）
     json_config = {
-        "prompt": args.prompt,
-        "style_guide": style_guide,
+        "prompt": final_prompt,
         "count": int(image_count),
         "ratio": image_ratio,
         "size": image_size,
