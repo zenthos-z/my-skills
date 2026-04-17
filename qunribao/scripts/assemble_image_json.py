@@ -68,10 +68,10 @@ def main():
     config = load_config_defaults()
 
     # 从配置中提取默认值
-    last_task = config.get("上次任务", {})
-    dirs = config.get("目录", {})
-    temp_dir = dirs.get("tempDir", "temp")
-    output_dir = dirs.get("outputDir", "reports/daily")
+    # config_loader 将 ## 目录 展平为顶级 key，## 上次任务 映射为 lastTask
+    last_task = config.get("lastTask", {})
+    temp_dir = config.get("tempDir", "temp")
+    output_dir = config.get("outputDir", "reports/daily")
 
     # 获取风格指南路径
     style_guide = get_style_guide_path()
