@@ -53,6 +53,30 @@ def load_template(template_name: str) -> str:
         return f.read()
 
 
+def load_style_guide(style_guide_path: str) -> str:
+    """从外部文件加载风格指南"""
+    path = Path(style_guide_path)
+    if not path.exists():
+        raise FileNotFoundError(f"风格指南文件不存在: {style_guide_path}")
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def parse_json_config(json_path: str) -> dict:
+    """从 JSON 文件加载生图配置"""
+    path = Path(json_path)
+    if not path.exists():
+        raise FileNotFoundError(f"JSON 配置文件不存在: {json_path}")
+    with open(path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    # 验证：prompt 必填
+    if not config.get("prompt"):
+        raise ValueError("JSON 配置必须包含非空的 'prompt' 字段")
+
+    return config
+
+
 def load_env() -> str:
     """从 .env 文件加载 API Key"""
     skill_dir = Path(__file__).parent.parent
@@ -249,6 +273,9 @@ def main():
   # 启用图片搜索
   python generate_image.py --prompt "cat" --image-search
 
+  # JSON 配置文件模式
+  python generate_image.py --json config.json
+
 环境变量:
   DMX_API_KEY           DMX API Key（用于图片生成）
         """
@@ -290,6 +317,9 @@ def main():
     # 输出控制
     parser.add_argument("--output-dir", "-o", help="输出目录（手动模式）")
     parser.add_argument("--filename", "-f", help="自定义文件名（覆盖自动总结）")
+    parser.add_argument("--style-guide", "-s", help="外部风格指南文件路径（追加到提示词末尾）")
+    parser.add_argument("--json", "-j", dest="json_config",
+                       help="JSON 配置文件路径（.json），覆盖其他参数")
     parser.add_argument("--dry-run", action="store_true",
                        help="仅打印生成的提示词，不调用 API")
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -297,9 +327,37 @@ def main():
 
     args = parser.parse_args()
 
+    # --json 覆盖：从 JSON 文件读取配置，覆盖 CLI 参数
+    if args.json_config:
+        try:
+            json_params = parse_json_config(args.json_config)
+        except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
+            print(f"错误: {e}")
+            sys.exit(1)
+
+        # JSON 字段映射到 argparse 属性
+        json_field_map = {
+            "prompt": "prompt",
+            "style_guide": "style_guide",
+            "count": "count",
+            "ratio": "ratio",
+            "size": "size",
+            "output_dir": "output_dir",
+            "filename": "filename",
+            "image_search": "image_search",
+            "google_search": "google_search",
+        }
+        for json_key, attr_name in json_field_map.items():
+            if json_key in json_params and json_params[json_key] is not None:
+                setattr(args, attr_name, json_params[json_key])
+
+        # style_guide 为空字符串 → 不追加风格
+        if args.style_guide == "":
+            args.style_guide = None
+
     # 验证参数
     if not args.input and not args.prompt:
-        parser.error("请提供 --input 或 --prompt 之一")
+        parser.error("请提供 --input、--prompt 或 --json 之一")
 
     if args.prompt and (args.input or args.refined_content):
         parser.error("--prompt 不能与 --input 或 --refined-content 同时使用")
@@ -379,6 +437,15 @@ def main():
 
     # 确保输出目录存在
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # 追加外部风格指南
+    if args.style_guide:
+        try:
+            style_content = load_style_guide(args.style_guide)
+            final_prompt = final_prompt + "\n\n" + style_content
+            mode_label += "+风格指南"
+        except FileNotFoundError as e:
+            print(f"警告: {e}，将忽略风格指南")
 
     # 生成基础文件名（不含序号和扩展名）
     timestamp = datetime.now().strftime(config["output"]["timestamp_format"])

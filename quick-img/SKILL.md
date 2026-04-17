@@ -64,7 +64,9 @@ python scripts/generate_image.py --input article.md --ratio 4:5 --size 2K
 
 ### Mode 3: Refine（精炼后生图）
 当内容过长或需要提炼时使用。流程由 Claude 在行为层完成：
-1. Claude 读取「精炼提示词模板」(assets/templates/精炼提示词模板.md)
+1. 检查调用方是否提供了精炼模板路径
+   - **有外部精炼模板**（如其他技能提供）→ 直接使用该模板精炼
+   - **无外部精炼模板** → **询问用户**选择：使用默认精炼模板 / 手动提供精炼要求 / 跳过精炼直接生图
 2. Claude 按模板指引提炼内容
 3. 先展示精炼结果给用户确认
 4. 用户确认后，调用 --prompt 生图
@@ -104,7 +106,7 @@ python scripts/generate_image.py --prompt "提示词变体2"
 ### 宽高比（常用）
 | 比例 | 适用场景 |
 |------|----------|
-| 4:5 | 日报配图、小红书、Instagram |
+| 4:5 | 信息图、小红书、Instagram |
 | 1:1 | 头像、方形帖子 |
 | 16:9 | PPT封面、视频封面 |
 | 9:16 | 手机壁纸、Stories |
@@ -137,8 +139,51 @@ python scripts/generate_image.py --prompt "提示词变体2"
 输出控制:
   --output-dir DIR, -o      输出目录（Direct Prompt 模式）
   --filename NAME, -f       自定义文件名
+  --style-guide PATH, -s    外部风格指南文件路径（追加到提示词末尾）
+  --style-guide PATH, -s    外部风格指南文件路径（追加到提示词末尾）
+  --json PATH, -j           JSON 配置文件路径（覆盖其他参数）
   --dry-run                 仅打印提示词，不调用 API
   --verbose, -v             显示详细日志
+
+## 外部技能调用协议
+
+其他 Claude Code 技能可通过 Skill 工具调用 quick-img。
+
+### 调用方式
+
+```
+Skill(skill: "quick-img", args: "<JSON文件路径>")
+```
+
+收到 args 后，Claude 直接透传给脚本：
+
+```bash
+python scripts/generate_image.py --json <args>
+```
+
+**Claude 不解析 JSON 内容**，所有解析和验证由脚本完成。
+
+### JSON 文件格式
+
+```json
+{
+  "prompt": "提示词内容（必填）",
+  "style_guide": "风格指南文件路径（空或不填 = 不追加风格）",
+  "count": 1,
+  "ratio": "4:5",
+  "size": "2K",
+  "output_dir": "输出目录路径",
+  "filename": "自定义文件名",
+  "image_search": false,
+  "google_search": false
+}
+```
+
+**必填**：`prompt`（不能为空）
+
+**风格行为**：
+- `style_guide` 有值（文件路径）→ 读取文件追加到 prompt 末尾
+- `style_guide` 为空/省略 → 纯净 prompt 直发 API，不追加任何风格
 
 ## Claude 内部调用指南
 

@@ -49,7 +49,7 @@
     ],
     "descriptions": {
       "1:1": { "name": "正方形", "pixels": "1024x1024", "use_case": "头像、Instagram帖子、商品主图" },
-      "4:5": { "name": "竖版推荐", "pixels": "1024x1280", "use_case": "Instagram竖版、小红书、日报配图(推荐)" },
+      "4:5": { "name": "竖版推荐", "pixels": "1024x1280", "use_case": "Instagram竖版、小红书、信息图" },
       "16:9": { "name": "宽屏", "pixels": "1024x576", "use_case": "PPT封面、视频封面、横幅Banner" },
       "9:16": { "name": "竖屏", "pixels": "576x1024", "use_case": "手机壁纸、Stories、短视频封面" },
       "4:3": { "name": "标准文档", "pixels": "1024x768", "use_case": "文档插图、幻灯片" },
@@ -70,7 +70,7 @@
     "sizes": {
       "0.5K": { "short_dimension": 512, "tokens": 747, "desc": "快速预览、草稿测试", "use_when": "快速验证提示词效果" },
       "1K": { "short_dimension": 1024, "tokens": 1120, "desc": "标准质量，平衡性价比", "use_when": "日常配图、社交媒体" },
-      "2K": { "short_dimension": 2048, "tokens": 1120, "desc": "高清质量，推荐用于日报", "use_when": "需要清晰文字的信息图" },
+      "2K": { "short_dimension": 2048, "tokens": 1120, "desc": "高清质量，适合含文字的信息图", "use_when": "需要清晰文字的信息图" },
       "4K": { "short_dimension": 4096, "tokens": 2000, "desc": "超高清，印刷级别", "use_when": "印刷输出、超大展示" }
     }
   },

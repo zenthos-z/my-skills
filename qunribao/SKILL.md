@@ -61,10 +61,15 @@ Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生
 - 若 quick-img 未安装：向用户说明并询问是否安装，安装命令为 `npx skills add zenthos-z/my-skills/quick-img`
 - 若用户拒绝安装：停止配图步骤，等待用户指定替代方案
 
-配图模板文件位于 `assets/templates/` 目录，包含：
-- `日报配图提炼.md` - 配图内容提炼提示词
-- `认知日报提炼.md` - 认知型日报配图提炼
-- `日报生图风格.md` - 配图视觉风格定义
+配图流程：
+1. Claude 读取 `assets/templates/日报配图提炼.md` 内联精炼日报内容
+2. `scripts/assemble_image_json.py` 组装 JSON（自动读取风格指南路径和默认配置）
+3. 通过 Skill 工具调用 quick-img，传入 JSON 文件路径
+4. quick-img 读取 JSON → 追加风格 → 调 API 生图
+
+配图模板文件位于 `assets/templates/` 目录：
+- `日报配图提炼.md` - 日报内容提炼提示词（认知洞察和行动信息同等重要）
+- `日报生图风格.md` - 配图视觉风格定义（通过 JSON `style_guide` 字段传递给 quick-img）
 
 ## 配置
 

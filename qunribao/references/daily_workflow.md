@@ -433,24 +433,45 @@ python scripts/feishu_upload.py \
 ### 10b：提炼配图内容
 
 使用 `assets/templates/日报配图提炼.md` 模板提炼日报核心内容。
-输出纯内容文件（仅结构化要点，不含风格指令），保存到 `{tempDir}/daily_card_content.txt`。
+Claude 读取提炼模板，按其指引内联精炼日报内容。认知洞察和行动信息同等重要，都应保留。
 
-> **注意**：该文件为新文件，但 Claude Code Write 工具要求先 Read 才能写入。需先用 Bash 创建空文件（`cat /dev/null > path`），再 Read，再 Write。
+**提炼要求**：
+- 提炼内容控制在原文 15%-25%
+- 保留核心议题标题和结论
+- 保留关键数据和活跃成员列表
+- 不含风格指令，风格由 `--style-guide` 参数传递
 
-**注意**：提炼内容不含风格指令，风格由 quick-img 的 `生图模板.txt` 包装。
+### 10c：组装 JSON 并调用 quick-img 生图
 
-### 10c：调用 quick-img 生图
+**Step 1：组装 JSON 配置**
+
+使用 `scripts/assemble_image_json.py` 脚本组装 JSON：
 
 ```bash
-python <quick-img-path>/scripts/generate_image.py \
-  --input {tempDir}/daily_card_content.txt \
-  --count 3 \
-  --ratio 4:5 \
-  --size 2K
+python scripts/assemble_image_json.py \
+  --prompt "{提炼后的精简内容}" \
+  --date {date} \
+  --count {imageCount}
 ```
 
-3 张图使用**完全相同的提示词**，供用户挑选最佳一张。
+脚本自动完成：
+- 读取 `assets/templates/日报生图风格.md` 路径填入 `style_guide` 字段
+- 读取 config 中的默认 `ratio`、`size`、`output_dir`
+- CLI 参数覆盖默认值（`--count`、`--ratio`、`--size`）
+- 输出 JSON 文件路径到 stdout
 
-生成后将图片移动到 `{outputDir}/daily/` 目录，按 `日报_YYYYMMDD_时间戳_序号.png` 命名。
+**Step 2：调起 quick-img 技能**
 
-> **注意**：文件名含中文，bash `mv` 的 glob 模式可能无法匹配。应使用 for 循环 + Glob 获取的完整路径逐个移动，而非 `mv *通配符*`。
+```
+Skill(skill: "quick-img", args: "<脚本输出的JSON文件路径>")
+```
+
+quick-img 加载后，Claude 直接透传给脚本：
+```bash
+python scripts/generate_image.py --json <JSON文件路径>
+```
+
+**参数说明**：
+- `{imageCount}` 张图使用完全相同的提示词，供用户挑选最佳一张
+- 比例和分辨率由任务配置决定（默认 4:5 / 2K）
+- 风格由 `日报生图风格.md` 控制，通过 JSON 的 `style_guide` 字段传递
