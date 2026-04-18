@@ -108,7 +108,6 @@ def build_lark_cli_command(
     records: List[dict],
     app_token: str,
     table_id: str,
-    bot_open_id: str = "ou_01217f67208740d595a1d869a9d4fb31",
     lark_cli_path: str = "lark-cli"
 ) -> str:
     """
@@ -117,11 +116,12 @@ def build_lark_cli_command(
     使用 lark-cli api 方式调用飞书多维表格接口：
     POST /open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_create
 
+    注意：lark-cli api 子命令不支持 --id 参数，使用 --as bot 即可指定 bot 身份。
+
     Args:
         records: 要插入的记录列表
         app_token: Bitable app token
         table_id: 表 ID
-        bot_open_id: Bot open_id
         lark_cli_path: lark-cli 可执行文件名
 
     Returns:
@@ -139,7 +139,7 @@ def build_lark_cli_command(
         "api",
         "POST",
         f'"{api_path}"',
-        f"--as bot --id {bot_open_id}",
+        "--as bot",
         f"--data '{body_json}'"
     ]
 

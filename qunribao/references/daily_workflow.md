@@ -35,10 +35,15 @@ Step 10: 生成日报配图（可选）
 
 **若 `lastTask` 存在**：
 
-向用户展示上次配置摘要：
+检查 `lastTask.autoConfirm` 字段：
+
+- **`autoConfirm == 'true'`**：直接沿用上次配置，跳过确认，静默设置 `runSteps`，进入 Step 0b 保存
+- **`autoConfirm` 为 `false` 或不存在**：向用户展示配置摘要，等待确认
+
+展示格式（无 autoConfirm 时）：
 
 ```
-📋 检测到上次日报任务配置（{lastTask.lastRun}，数据日期 {lastTask.lastDate}）：
+📋 检测到上次日报任务配置（数据日期 {lastTask.lastDate}）：
 
 | 步骤 | 状态 |
 |------|------|
@@ -60,9 +65,9 @@ Step 10: 生成日报配图（可选）
 
 ```markdown
 ## 上次任务
-- lastRun: {当前时间 ISO 8601}
 - lastDate: {--date 参数值}
 - command: daily
+- autoConfirm: {沿用上次 autoConfirm 值，首次默认 false}
 - resource: {runSteps.resource}
 - engineering: {runSteps.engineering}
 - feishuUpload: {runSteps.feishuUpload}
@@ -384,8 +389,6 @@ python scripts/feishu_upload.py \
 - 用户审阅后确认上传，或指出需要修改的条目
 
 用户确认后执行 lark-cli 命令上传到飞书多维表格。
-
-> **注意**：`feishu_upload.py` 生成的命令可能包含 `--id` 参数，但 `lark-cli api` 子命令不支持此参数。若执行报错 `unknown flag: --id`，移除该参数后重试。
 
 > **Skip 控制**：需同时满足 `feishu.upload=true`（系统配置）且 `runSteps.feishuUpload=true`（任务配置）。任一为 false 则跳过。
 
