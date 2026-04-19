@@ -421,17 +421,14 @@ python scripts/feishu_upload.py \
 >
 > 若 `features.autoGenerateImage=true` 且 `runSteps.generateImage` 未明确设置，默认执行。
 
-### 10a：检查 quick-img 技能
+### 10a：调用 quick-img 技能
 
-检测 quick-img 技能是否可用：
-1. 检查已加载的技能列表中是否包含 `quick-img`
-2. 或检查已安装的 `quick-img` 技能中 `scripts/generate_image.py` 是否存在
+直接调用 `Skill(skill: "quick-img")` 尝试生图，无需预检测技能是否安装。
 
-**若 quick-img 不可用**：
-1. 停止配图步骤
-2. 告知用户：「配图功能需要 quick-img 技能，当前未检测到。是否立即安装？」
-3. 用户同意 → 执行：`npx skills add zenthos-z/my-skills/quick-img`
-4. 用户拒绝 → 停止，等待用户指定替代方案。**不得自行选择替代方案**
+**若调用失败（技能不存在）**：
+1. 告知用户：「配图功能需要 quick-img 技能，调用失败。是否安装？」
+2. 用户同意 → 执行：`npx skills add zenthos-z/my-skills/quick-img`，然后重试生图
+3. 用户拒绝 → 停止，等待用户指定替代方案。**不得自行选择替代方案**
 
 ### 10b：提炼配图内容
 
