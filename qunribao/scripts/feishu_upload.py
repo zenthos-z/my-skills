@@ -146,16 +146,87 @@ def build_lark_cli_command(
     return " ".join(cmd_parts)
 
 
+def date_to_ms(date_str: str) -> int:
+    """将 'YYYY-MM-DD' 转换为当天 00:00 UTC+8 毫秒时间戳"""
+    dt = datetime.strptime(date_str, "%Y-%m-%d")
+    dt = dt.replace(tzinfo=UTC_PLUS_8)
+    return int(dt.timestamp() * 1000)
+
+
+def build_daily_report_commands(
+    date: str,
+    app_token: str,
+    table_id: str,
+    identity: str = "user",
+    report_type: str = "日报"
+) -> dict:
+    """
+    构建日报上传命令（两步：创建记录 + 上传附件）
+
+    Args:
+        date: 日期字符串 YYYY-MM-DD
+        app_token: Bitable app token
+        table_id: 日报表 ID
+        identity: lark-cli identity (user/bot)
+        report_type: 日报 or 周报
+
+    Returns:
+        包含 create_command 和 upload_command_template 的 dict
+    """
+    ts = date_to_ms(date)
+    api_path = f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_create"
+
+    record_body = {"records": [{"fields": {"日期": ts, "类型": [report_type]}}]}
+    body_json = json.dumps(record_body, ensure_ascii=False)
+
+    create_cmd = (
+        f'MSYS_NO_PATHCONV=1 lark-cli api POST "{api_path}" '
+        f'--as {identity} --data \'{body_json}\''
+    )
+
+    md_upload_template = (
+        f'lark-cli base +record-upload-attachment '
+        f'--base-token {app_token} '
+        f'--table-id {table_id} '
+        f'--record-id {{record_id}} '
+        f'--field-id markdown '
+        f'--file {{md_path}} '
+        f'--as {identity}'
+    )
+
+    image_upload_template = (
+        f'lark-cli base +record-upload-attachment '
+        f'--base-token {app_token} '
+        f'--table-id {table_id} '
+        f'--record-id {{record_id}} '
+        f'--field-id 图报 '
+        f'--file {{image_path}} '
+        f'--as {identity}'
+    )
+
+    return {
+        "create_command": create_cmd,
+        "md_upload_template": md_upload_template,
+        "image_upload_template": image_upload_template,
+        "date": date,
+        "type": report_type
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Prepare Feishu Bitable upload from JSON")
     parser.add_argument("--resource-json", type=str, help="Path to resource JSON file")
     parser.add_argument("--engineering-json", type=str, help="Path to engineering issues JSON file")
+    parser.add_argument("--daily-report", type=str, metavar="DATE", help="Upload daily report for date (YYYY-MM-DD)")
+    parser.add_argument("--daily-md", type=str, help="Path to daily report MD file (used with --daily-report)")
+    parser.add_argument("--weekly-report", type=str, metavar="DATE", help="Upload weekly report for date (YYYY-MM-DD)")
     parser.add_argument("--config", type=str, help="Path to config.local.md (default: assets/config.local.md)")
     args = parser.parse_args()
 
     # 至少需要一个输入
-    if not args.resource_json and not args.engineering_json:
-        parser.error("Must specify at least one of: --resource-json, --engineering-json")
+    has_input = args.resource_json or args.engineering_json or args.daily_report or args.weekly_report
+    if not has_input:
+        parser.error("Must specify at least one of: --resource-json, --engineering-json, --daily-report, --weekly-report")
 
     # 加载配置
     config_loader = ConfigLoader()
@@ -245,6 +316,39 @@ def main():
                 "command": cmd,
                 "count": len(result["engineering"])
             })
+
+    # 处理日报上传
+    if args.daily_report or args.weekly_report:
+        report_date = args.daily_report or args.weekly_report
+        report_type = "周报" if args.weekly_report else "日报"
+
+        daily_report_table_id = feishu_config.get("dailyReportTableId", feishu_config.get("daily_report_table_id", ""))
+        identity = feishu_config.get("identity", "user")
+
+        if not bitable_app_token or not daily_report_table_id:
+            print("Error: Missing feishu bitableAppToken or dailyReportTableId in config", file=sys.stderr)
+            sys.exit(1)
+
+        report_cmds = build_daily_report_commands(
+            date=report_date,
+            app_token=bitable_app_token,
+            table_id=daily_report_table_id,
+            identity=identity,
+            report_type=report_type
+        )
+
+        md_path = args.daily_md or ""
+        report_cmds["md_path"] = md_path
+        result["daily_report"] = report_cmds
+        result["commands"].append({
+            "type": "daily_report",
+            "create_command": report_cmds["create_command"],
+            "md_upload_template": report_cmds["md_upload_template"],
+            "image_upload_template": report_cmds["image_upload_template"],
+            "md_path": md_path,
+            "date": report_date,
+            "report_type": report_type
+        })
 
     # 输出结果
     output = json.dumps(result, ensure_ascii=False, indent=2)

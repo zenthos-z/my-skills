@@ -34,7 +34,7 @@ description: |
 
 **表格行排序**：先输出所有 ⭐ 行，再输出所有 🔄 行，再输出所有 💡 行，最后输出所有 ✅ 行；
 
-**任务配置记忆**：每次执行时自动检测 `config.local.md` 中的 `## 上次任务` section，询问是否沿用上次步骤配置（资源提取、工程问题、飞书上传、配图），只需提供新日期。重置方法：编辑 `config.local.md`，删除 `## 上次任务` section。
+**任务配置记忆**：每次执行时自动检测 `config.local.md` 中的 `## 上次任务` section。若 `autoConfirm: true`，静默沿用上次配置；否则询问是否沿用。重置方法：编辑 `config.local.md`，删除 `## 上次任务` section。
 
 ### `/qunribao prepare --date <日期>`
 
@@ -52,20 +52,21 @@ description: |
 
 ```
 用户：将今天的日报转成图片
-Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生图
+Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生图 → 上传到飞书图报字段
 ```
 
 **配图依赖**：配图功能依赖独立的 `quick-img` 技能（https://github.com/zenthos-z/quick-img）。
 
-- 若 quick-img 已安装：直接调用 `generate_image.py` 生图（见 `daily_workflow.md` Step 9）
+- 若 quick-img 已安装：直接调用 `generate_image.py` 生图（见 `daily_workflow.md` Step 10）
 - 若 quick-img 未安装：向用户说明并询问是否安装，安装命令为 `npx skills add zenthos-z/my-skills/quick-img`
 - 若用户拒绝安装：停止配图步骤，等待用户指定替代方案
 
 配图流程：
 1. Claude 读取 `assets/templates/日报配图提炼.md` 内联精炼日报内容
-2. `scripts/assemble_image_json.py` 组装 JSON（自动读取风格指南路径和默认配置）
+2. `scripts/assemble_image_json.py` 组装 JSON（自动渲染风格模板到 prompt）
 3. 通过 Skill 工具调用 quick-img，传入 JSON 文件路径
-4. quick-img 读取 JSON → 追加风格 → 调 API 生图
+4. quick-img 读取 JSON → 调 API 生图 → 保存到 `{outputDir}/daily/images/`
+5. 上传 PNG 到飞书日报表"图报"字段（需先有日报记录）
 
 配图模板文件位于 `assets/templates/` 目录：
 - `日报配图提炼.md` - 日报内容提炼提示词（认知洞察和行动信息同等重要）
@@ -93,7 +94,8 @@ Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生
 | `feishu.bitableAppToken`     | 飞书多维表格 App Token                        |
 | `feishu.resourceTableId`     | 资源表 ID                                  |
 | `feishu.engineeringTableId`  | 工程问题表 ID                              |
-| `feishu.identity`            | 飞书身份标识（如 `bot`）                          |
+| `feishu.dailyReportTableId`  | 日报表 ID（增量写入，每日新建记录）            |
+| `feishu.identity`            | 飞书身份标识（如 `user`）                        |
 
 **敏感配置推荐环境变量方式**（无需创建 `config.local.md`）：
 
@@ -190,9 +192,9 @@ pip install jsonschema
 **config.local.md 格式**：
 ```markdown
 ## 上次任务
-- lastRun: 2026-04-09T14:30:00+08:00
 - lastDate: 2026-04-08
 - command: daily
+- autoConfirm: true
 - resource: true
 - engineering: true
 - feishuUpload: true
@@ -201,6 +203,8 @@ pip install jsonschema
 - imageRatio: 4:5
 - imageSize: 2K
 ```
+
+**autoConfirm 控制**：设为 `true` 跳过确认直接沿用；设为 `false` 或删除该行则每次确认。
 
 **重置**：编辑 `config.local.md`，删除 `## 上次任务` section 即可恢复首次运行行为。
 
@@ -252,7 +256,9 @@ qunribao/
 
 reports/
 ├── daily/                          # 日报输出
-│   └── 群日报 · YYYY-MM-DD.md     # Markdown 报告
+│   ├── 群日报 · YYYY-MM-DD.md     # Markdown 报告
+│   └── images/                     # 配图输出
+│       └── 群日报-YYYY-MM-DD.png
 ├── resources/                      # 资源汇总
 │   └── 群资源 · YYYY-MM-DD.md
 ├── weekly/                         # 周报输出

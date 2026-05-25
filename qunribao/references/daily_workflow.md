@@ -13,9 +13,9 @@ Step 4: 读取共享内容与记忆文档
 Step 5: 生成日报 JSON 数据
 Step 6: 生成资源 JSON 数据
 Step 7: 生成工程问题 JSON 数据
-Step 8: 飞书上传
+Step 8: 飞书上传（含日报记录创建 + MD 上传）
 Step 9: 更新记忆文档
-Step 10: 生成日报配图（可选）
+Step 10: 生成日报配图并上传到飞书（可选）
 ```
 
 ---
@@ -354,6 +354,8 @@ python scripts/json_to_md.py --input <json_path> --output <md_path>
 
 ## Step 8：飞书上传
 
+> **日报表为增量表**：每次执行创建新记录，不更新已有记录。资源表和工程问题表同理。
+
 ### Step 8.1：构建上传 payload
 
 ```bash
@@ -390,6 +392,46 @@ python scripts/feishu_upload.py \
 
 用户确认后执行 lark-cli 命令上传到飞书多维表格。
 
+**日报上传预览**：
+
+| 日期 | 类型 | markdown | 图报 |
+|------|------|----------|------|
+| {date} | 日报 | 群日报 · {date}.md | （Step 10 生图后上传） |
+
+**日报表字段结构**：
+
+| 字段名 | 字段ID | 类型 | 说明 |
+|--------|--------|------|------|
+| 日期 | fldXp4I5XA | datetime | 日报日期 |
+| 类型 | fldapLPDyO | select | 日报/周报 |
+| markdown | fldC1zAtH8 | attachment | 日报 MD 文件 |
+| 图报 | fldQNSkLQ1 | attachment | 配图 PNG 文件 |
+
+> **增量写入**：日报表每次执行都创建新记录，不更新已有记录。record_id 需保存到上下文，供 Step 10 上传配图使用。
+
+**日报上传执行（两步）**：
+
+1. 创建记录（日期 + 类型）：
+```bash
+MSYS_NO_PATHCONV=1 lark-cli api POST "/open-apis/bitable/v1/apps/{app_token}/tables/{dailyReportTableId}/records/batch_create" \
+  --as user --data '{"records": [{"fields": {"日期": timestamp, "类型": ["日报"]}}]}'
+```
+
+> **注意**：lark-cli 需要 `MSYS_NO_PATHCONV=1` 前缀（Git Bash 环境下防止路径转换），以及 `env -u OPENCLAW_STATE_DIR -u OPENCLAW_HOME` 前缀（若环境中存在 OpenClaw 相关变量）。
+
+2. 从响应中提取 `record_id`，上传 MD 文件到 markdown 字段：
+```bash
+cd {daily_dir} && env -u OPENCLAW_STATE_DIR -u OPENCLAW_HOME lark-cli base +record-upload-attachment \
+  --base-token {app_token} \
+  --table-id {dailyReportTableId} \
+  --record-id {record_id} \
+  --field-id markdown \
+  --file ./群日报\ ·\ {date}.md \
+  --as user
+```
+
+> **注意**：`+record-upload-attachment` 要求使用相对路径（不接受绝对路径），需先 `cd` 到文件所在目录。
+
 > **Skip 控制**：需同时满足 `feishu.upload=true`（系统配置）且 `runSteps.feishuUpload=true`（任务配置）。任一为 false 则跳过。
 
 ---
@@ -415,11 +457,13 @@ python scripts/feishu_upload.py \
 
 ---
 
-## Step 10：生成日报配图（可选）
+## Step 10：生成日报配图并上传到飞书（可选）
 
 > **执行条件**：`runSteps.generateImage=true` 时执行此步骤。首次运行时，若用户未明确要求配图，设为 false。
 >
 > 若 `features.autoGenerateImage=true` 且 `runSteps.generateImage` 未明确设置，默认执行。
+>
+> **前置依赖**：需要 Step 8 创建日报记录后获得的 `record_id`。若 Step 8 未执行或跳过，配图仅保存到本地，不上传飞书。
 
 ### 10a：调用 quick-img 技能
 
@@ -455,7 +499,8 @@ python scripts/assemble_image_json.py \
 ```
 
 脚本自动完成：
-- 读取 `assets/templates/日报生图风格.md` 路径填入 `style_guide` 字段
+- 将精炼内容作为 `prompt`，风格指南文件路径填入 `style_guide` 字段
+- quick-img 读取 `style_guide` 文件内容追加到 prompt 末尾
 - 读取 config 中的默认 `ratio`、`size`、`output_dir`
 - CLI 参数覆盖默认值（`--count`、`--ratio`、`--size`）
 - 输出 JSON 文件路径到 stdout
@@ -474,4 +519,24 @@ python scripts/generate_image.py --json <JSON文件路径>
 **参数说明**：
 - `{imageCount}` 张图使用完全相同的提示词，供用户挑选最佳一张
 - 比例和分辨率由任务配置决定（默认 4:5 / 2K）
-- 风格由 `日报生图风格.md` 控制，通过 JSON 的 `style_guide` 字段传递
+- 风格由 `日报生图风格.md` 控制，通过 JSON 的 `style_guide` 字段传递给 quick-img
+
+### 10d：上传配图到飞书日报表
+
+生图完成后，将 PNG 图片上传到日报记录的"图报"字段（`fldQNSkLQ1`）。
+
+**前置条件**：Step 8 已创建日报记录并获得 `record_id`。
+
+```bash
+cd {outputDir}/daily/images && env -u OPENCLAW_STATE_DIR -u OPENCLAW_HOME lark-cli base +record-upload-attachment \
+  --base-token {app_token} \
+  --table-id {dailyReportTableId} \
+  --record-id {record_id} \
+  --field-id 图报 \
+  --file ./群日报-{date}.png \
+  --as user
+```
+
+> **注意**：同 Step 8，需使用相对路径 + `cd` 到文件所在目录，以及 `env -u OPENCLAW_STATE_DIR -u OPENCLAW_HOME` 前缀。
+
+**若 Step 8 未执行**：配图仅保存到 `{outputDir}/daily/images/` 目录，提示用户后续可手动上传。
