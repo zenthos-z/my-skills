@@ -19,7 +19,7 @@ if sys.platform == 'win32':
 
 # 直接导入底层客户端
 from weflow_client import WeFlowClient
-from config_loader import get_config as _load_config
+from config_loader import get_config as _load_config, get_config_sources
 
 # Date format constants (single source of truth)
 DATE_FMT_COMPACT = '%Y%m%d'            # filenames: chat_context_20260325.md
@@ -92,7 +92,8 @@ class ChatContextGenerator:
             标准化后的消息列表
         """
         # 转换 datetime 为时间戳
-        start_ts = int(start.timestamp()) if start else None
+        # start 减 1 秒规避 API 对精确午夜时间戳的边界处理异常
+        start_ts = int(start.timestamp()) - 1 if start else None
         end_ts = int(end.timestamp()) if end else None
 
         # 获取所有消息（自动分页）
@@ -238,6 +239,7 @@ class ChatContextGenerator:
             print(f"   过滤后: {len(messages)} 条消息（发送者: {sender_filter}）")
         else:
             print(f"   获取到 {len(messages)} 条消息")
+        self._last_message_count = len(messages)
 
         # 按时间戳升序排序（从早到晚），相同时间按 ID 升序（小号在前）
         messages.sort(key=lambda m: (
@@ -339,6 +341,48 @@ class ChatContextGenerator:
 
         return content
 
+    def generate_with_fallback(self, start: datetime, end: datetime,
+                               output_path: str, *, inline_images: bool = False,
+                               sender_filter: Optional[str] = None,
+                               include_stats: bool = False,
+                               is_date_mode: bool = False) -> None:
+        """generate() with auto-expand fallback (max ±1h).
+
+        Only expands when:
+        - is_date_mode=True (i.e., --date flag, not explicit --start/--end)
+        - initial generate() returned 0 messages
+
+        Expansion steps: ±30min, then ±1h.
+        """
+        self.generate(start, end, output_path,
+                      inline_images=inline_images,
+                      sender_filter=sender_filter,
+                      include_stats=include_stats)
+
+        if self._last_message_count > 0 or not is_date_mode:
+            return
+
+        # 0 messages + date mode → try expansion
+        expansions = [
+            (timedelta(minutes=30), "±30min"),
+            (timedelta(hours=1), "±1h"),
+        ]
+        for delta, label in expansions:
+            new_start = start - delta
+            new_end = end + delta
+            print(f"   [auto-expand] 0 messages, retrying {label}: "
+                  f"{new_start.strftime('%Y-%m-%d %H:%M')} ~ "
+                  f"{new_end.strftime('%Y-%m-%d %H:%M')}")
+            self.generate(new_start, new_end, output_path,
+                          inline_images=inline_images,
+                          sender_filter=sender_filter,
+                          include_stats=include_stats)
+            if self._last_message_count > 0:
+                print(f"   [auto-expand] ✅ found {self._last_message_count} messages ({label})")
+                return
+
+        print(f"   [auto-expand] ❌ 0 messages even with ±1h expansion")
+
     def _format_message(self, msg: Dict[str, Any], inline_images: bool = False) -> str:
         """格式化单条消息
 
@@ -377,6 +421,11 @@ class ChatContextGenerator:
         raw_content = msg.get("raw_content", "")
         media_path = msg.get("media_local_path")
         media_type = msg.get("media_type")
+
+        # 来源类型标注
+        source_type = self._classify_source_type(raw_content, msg_type)
+        source_labels = {"original": "原创", "shared": "转发", "referenced": "引用"}
+        lines.append(f"[来源:{source_labels[source_type]}]")
 
         # ========== 特殊类型处理（按优先级顺序）==========
 
@@ -751,6 +800,23 @@ class ChatContextGenerator:
 
         return stats
 
+    def _classify_source_type(self, raw_content: str, msg_type: int) -> str:
+        """Classify message source type for downstream attribution.
+
+        Returns:
+            "original"    - speaker's own content (text, own images, own files)
+            "shared"      - forwarded/external content (link cards, mini-programs)
+            "referenced"  - reply quoting another person's message
+        """
+        # 1. Quote/reply → referenced
+        if '<refermsg>' in raw_content:
+            return "referenced"
+        # 2. Link cards (not file uploads) → shared
+        if '<appmsg' in raw_content and '<fileupload>' not in raw_content:
+            return "shared"
+        # 3. Default: own content
+        return "original"
+
 
 def generate_chat_context(
     config: Dict[str, Any],
@@ -810,7 +876,7 @@ def generate_chat_context(
 
 if __name__ == "__main__":
     import argparse
-    from datetime import date as dt_date
+    from datetime import date as dt_date, timedelta
 
     parser = argparse.ArgumentParser(description='生成聊天上下文文档')
     parser.add_argument('--date', '-d', help='目标日期 (YYYY-MM-DD)，默认今天')
@@ -826,6 +892,9 @@ if __name__ == "__main__":
 
     # 通过 config_loader 加载配置（优先级：环境变量 > config.local.json > config.json）
     config = _load_config()
+    config_sources = get_config_sources()
+    if config_sources:
+        print(f"📋 配置来源: {', '.join(config_sources)}")
 
     # 解析时间范围
     if args.start and args.end:
@@ -835,11 +904,13 @@ if __name__ == "__main__":
     elif args.date:
         target_date = datetime.strptime(args.date, DATE_FMT_CLI).date()
         start = datetime.combine(target_date, datetime.min.time())
-        end = datetime.combine(target_date, datetime.max.time().replace(microsecond=0))
+        next_day = target_date + timedelta(days=1)
+        end = datetime.combine(next_day, datetime.min.time())
     else:
         target_date = dt_date.today()
         start = datetime.combine(target_date, datetime.min.time())
-        end = datetime.combine(target_date, datetime.max.time().replace(microsecond=0))
+        next_day = target_date + timedelta(days=1)
+        end = datetime.combine(next_day, datetime.min.time())
 
     # 确定输出目录和图片模式
     output_dir = args.output or config.get('tempDir', 'temp')
@@ -877,15 +948,18 @@ if __name__ == "__main__":
     date_str = target_date.strftime(DATE_FMT_COMPACT)
     output_path = Path(output_dir) / f"chat_context_{date_str}.md"
 
+    is_date_mode = not (args.start and args.end)
+
     try:
-        # 生成文档
-        generator.generate(
+        # 生成文档（date 模式下自动扩展时间范围）
+        generator.generate_with_fallback(
             start=start,
             end=end,
             output_path=str(output_path),
             inline_images=inline_images,
             sender_filter=args.sender,
-            include_stats=args.stats
+            include_stats=args.stats,
+            is_date_mode=is_date_mode,
         )
         print(f"\n✅ 生成成功: {output_path}")
     except Exception as e:

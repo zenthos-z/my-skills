@@ -411,13 +411,14 @@ python scripts/feishu_upload.py \
 
 **日报上传执行（两步）**：
 
-1. 创建记录（日期 + 类型）：
+1. 创建记录（日期 + 类型）——**必须通过 feishu_upload.py 生成命令，禁止手动计算时间戳**：
 ```bash
-MSYS_NO_PATHCONV=1 lark-cli api POST "/open-apis/bitable/v1/apps/{app_token}/tables/{dailyReportTableId}/records/batch_create" \
-  --as user --data '{"records": [{"fields": {"日期": timestamp, "类型": ["日报"]}}]}'
+python scripts/feishu_upload.py --daily-report {date} --daily-md {md_path} --config <config.local.md path>
 ```
 
-> **注意**：lark-cli 需要 `MSYS_NO_PATHCONV=1` 前缀（Git Bash 环境下防止路径转换），以及 `env -u OPENCLAW_STATE_DIR -u OPENCLAW_HOME` 前缀（若环境中存在 OpenClaw 相关变量）。
+脚本会输出完整的 `create_command`（含正确的 UTC+8 毫秒时间戳）。直接执行该命令创建记录。
+
+> **注意**：手动计算时间戳容易出错（如年份偏差），务必使用脚本生成的命令。执行时需加 `env -u OPENCLAW_STATE_DIR -u OPENCLAW_HOME` 前缀（若环境中存在 OpenClaw 相关变量）。
 
 2. 从响应中提取 `record_id`，上传 MD 文件到 markdown 字段：
 ```bash

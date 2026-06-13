@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mermaid-pro 架构蓝图</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #f8fafc;
+            --canvas-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --accent-color: #3b82f6;
+            --grid-color: #e2e8f0;
+            --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 40px;
+        }
+
+        .blueprint-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--canvas-color);
+            border: 1px solid var(--border-color);
+            padding: 50px;
+        }
+
+        /* Grid background */
+        .blueprint-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blueprint-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            border-bottom: 2px solid var(--text-primary);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        .header-meta {
+            font-family: var(--font-code);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            margin-top: 25px;
+        }
+
+        /* Workflow Flowchart */
+        .workflow-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .workflow-step {
+            text-align: center;
+            position: relative;
+            flex: 1;
+        }
+
+        .workflow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid var(--text-secondary);
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            background-color: var(--text-primary);
+            color: var(--canvas-color);
+            font-family: var(--font-code);
+            font-weight: 600;
+            line-height: 36px;
+            border-radius: 0;
+            margin-bottom: 8px;
+        }
+
+        .step-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Component Architecture */
+        .architecture-diagram {
+            display: grid;
+            grid-template-columns: 200px 1fr 250px;
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .arch-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .arch-column-title {
+            font-family: var(--font-code);
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .arch-box {
+            padding: 15px;
+            background-color: var(--canvas-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .arch-box.primary {
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .arch-box h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .arch-box ul {
+            list-style: none;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .arch-box li {
+            font-family: var(--font-code);
+            margin-bottom: 4px;
+        }
+
+        .arrow-right {
+            align-self: center;
+            font-size: 24px;
+            color: var(--text-secondary);
+        }
+
+        /* Data Flow */
+        .data-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+
+        .flow-node {
+            text-align: center;
+            padding: 15px 25px;
+            background-color: var(--canvas-color);
+            border: 2px solid var(--text-primary);
+        }
+
+        .flow-node h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .flow-node p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: var(--font-code);
+        }
+
+        .flow-arrow {
+            font-size: 24px;
+            color: var(--text-secondary);
+        }
+
+        /* Color Palette */
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background-color: var(--canvas-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border: 2px solid;
+            flex-shrink: 0;
+        }
+
+        .color-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .color-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .color-hex {
+            font-family: var(--font-code);
+            font-size: 11px;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--bg-color);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        td {
+            font-size: 13px;
+        }
+
+        td.code {
+            font-family: var(--font-code);
+            font-size: 12px;
+        }
+
+        /* Dependencies */
+        .dependencies {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .dep-item {
+            padding: 20px;
+            background-color: var(--canvas-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .dep-name {
+            font-family: var(--font-code);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .dep-version {
+            font-family: var(--font-code);
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .dep-purpose {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Matrix Grid */
+        .support-matrix {
+            display: grid;
+            grid-template-columns: 150px repeat(7, 1fr);
+            gap: 2px;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+        }
+
+        .matrix-header {
+            font-weight: 600;
+            padding: 10px;
+            background-color: var(--text-primary);
+            color: var(--canvas-color);
+            text-align: center;
+        }
+
+        .matrix-row-label {
+            padding: 10px;
+            background-color: var(--canvas-color);
+            font-weight: 500;
+        }
+
+        .matrix-cell {
+            padding: 10px;
+            background-color: var(--canvas-color);
+            text-align: center;
+        }
+
+        .matrix-cell.yes {
+            color: #2f9e44;
+        }
+
+        .matrix-cell.no {
+            color: #c92a2a;
+        }
+    </style>
+</head>
+<body>
+    <div class="blueprint-container">
+        <div class="blueprint-content">
+            <header>
+                <h1>mermaid-pro 架构蓝图</h1>
+                <div class="header-meta">Version 1.0.0 | Professional Mermaid Diagrams Skill | Generated: 2026-04-14</div>
+            </header>
+
+            <!-- Core Workflow -->
+            <section>
+                <h2>核心工作流（6步骤）</h2>
+                <div class="workflow-container">
+                    <div class="workflow-step">
+                        <span class="step-number">1</span>
+                        <div class="step-label">分析</div>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-number">2</span>
+                        <div class="step-label">选择类型</div>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-number">3</span>
+                        <div class="step-label">配置</div>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-number">4</span>
+                        <div class="step-label">生成</div>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-number">5</span>
+                        <div class="step-label">校验</div>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-number">6</span>
+                        <div class="step-label">导出</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Component Architecture -->
+            <section>
+                <h2>组件架构</h2>
+                <div class="architecture-diagram">
+                    <div class="arch-column">
+                        <div class="arch-column-title">入口层</div>
+                        <div class="arch-box primary">
+                            <h4>SKILL.md</h4>
+                            <ul>
+                                <li>技能定义</li>
+                                <li>工作流引导</li>
+                                <li>参数规范</li>
+                            </ul>
+                        </div>
+                        <div class="arch-box">
+                            <h4>Claude Agent</h4>
+                            <ul>
+                                <li>意图识别</li>
+                                <li>代码生成</li>
+                                <li>校验调用</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="arch-column" style="justify-content: center;">
+                        <div class="arrow-right">→</div>
+                    </div>
+                    <div class="arch-column">
+                        <div class="arch-column-title">脚本层</div>
+                        <div class="arch-box primary">
+                            <h4>setup.mjs</h4>
+                            <ul>
+                                <li>环境检测</li>
+                                <li>依赖安装</li>
+                                <li>就绪检查</li>
+                            </ul>
+                        </div>
+                        <div class="arch-box primary">
+                            <h4>validate-mermaid.mjs</h4>
+                            <ul>
+                                <li>语法解析</li>
+                                <li>错误检测</li>
+                                <li>JSON 输出</li>
+                            </ul>
+                        </div>
+                        <div class="arch-box primary">
+                            <h4>md-mermaid-to-image.mjs</h4>
+                            <ul>
+                                <li>Markdown 解析</li>
+                                <li>批量渲染</li>
+                                <li>SVG/PNG 导出</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Flow -->
+            <section>
+                <h2>数据流</h2>
+                <div class="data-flow">
+                    <div class="flow-node">
+                        <h4>用户输入</h4>
+                        <p>自然语言描述</p>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-node">
+                        <h4>Claude 生成</h4>
+                        <p>Mermaid 代码</p>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-node">
+                        <h4>语法校验</h4>
+                        <p>validate-mermaid</p>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-node">
+                        <h4>输出</h4>
+                        <p>文档 / 图片</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Color Palette -->
+            <section>
+                <h2>9色语义调色板</h2>
+                <div class="color-palette">
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #d3f9d8; border-color: #2f9e44;"></div>
+                        <div class="color-info">
+                            <h4>绿色 Green</h4>
+                            <p>输入、起点、成功</p>
+                            <span class="color-hex">#d3f9d8 / #2f9e44</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #ffe3e3; border-color: #c92a2a;"></div>
+                        <div class="color-info">
+                            <h4>红色 Red</h4>
+                            <p>决策、错误、警告</p>
+                            <span class="color-hex">#ffe3e3 / #c92a2a</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #e5dbff; border-color: #5f3dc4;"></div>
+                        <div class="color-info">
+                            <h4>紫色 Purple</h4>
+                            <p>处理、推理</p>
+                            <span class="color-hex">#e5dbff / #5f3dc4</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #ffe8cc; border-color: #d9480f;"></div>
+                        <div class="color-info">
+                            <h4>橙色 Orange</h4>
+                            <p>动作、工具</p>
+                            <span class="color-hex">#ffe8cc / #d9480f</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #c5f6fa; border-color: #0c8599;"></div>
+                        <div class="color-info">
+                            <h4>青色 Cyan</h4>
+                            <p>输出、结果</p>
+                            <span class="color-hex">#c5f6fa / #0c8599</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #fff4e6; border-color: #e67700;"></div>
+                        <div class="color-info">
+                            <h4>黄色 Yellow</h4>
+                            <p>存储、数据</p>
+                            <span class="color-hex">#fff4e6 / #e67700</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #e7f5ff; border-color: #1971c2;"></div>
+                        <div class="color-info">
+                            <h4>蓝色 Blue</h4>
+                            <p>元数据、标题</p>
+                            <span class="color-hex">#e7f5ff / #1971c2</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #f8f9fa; border-color: #868e96;"></div>
+                        <div class="color-info">
+                            <h4>灰色 Gray</h4>
+                            <p>中性、遗留</p>
+                            <span class="color-hex">#f8f9fa / #868e96</span>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch" style="background-color: #f3d9fa; border-color: #862e9c;"></div>
+                        <div class="color-info">
+                            <h4>粉色 Pink</h4>
+                            <p>学习、优化</p>
+                            <span class="color-hex">#f3d9fa / #862e9c</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Diagram Types -->
+            <section>
+                <h2>图表类型（7种）</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>类型</th>
+                            <th>关键词</th>
+                            <th>适用场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>流程图</td>
+                            <td class="code">flowchart TD/LR</td>
+                            <td>流程、决策、工作流</td>
+                        </tr>
+                        <tr>
+                            <td>时序图</td>
+                            <td class="code">sequenceDiagram</td>
+                            <td>API 流、服务交互</td>
+                        </tr>
+                        <tr>
+                            <td>类图</td>
+                            <td class="code">classDiagram</td>
+                            <td>面向对象设计</td>
+                        </tr>
+                        <tr>
+                            <td>实体关系图</td>
+                            <td class="code">erDiagram</td>
+                            <td>数据库模式</td>
+                        </tr>
+                        <tr>
+                            <td>C4 架构图</td>
+                            <td class="code">C4Context</td>
+                            <td>系统架构、部署视图</td>
+                        </tr>
+                        <tr>
+                            <td>状态图</td>
+                            <td class="code">stateDiagram-v2</td>
+                            <td>状态机、生命周期</td>
+                        </tr>
+                        <tr>
+                            <td>思维导图</td>
+                            <td class="code">mindmap</td>
+                            <td>层次概念、头脑风暴</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Layout Engines -->
+            <section>
+                <h2>布局引擎（4种）</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>引擎</th>
+                            <th>配置</th>
+                            <th>适用场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>dagre</td>
+                            <td class="code">(默认)</td>
+                            <td>简单层次图</td>
+                        </tr>
+                        <tr>
+                            <td>elk</td>
+                            <td class="code">layout: elk</td>
+                            <td>复杂图、更好间距</td>
+                        </tr>
+                        <tr>
+                            <td>elk.stress</td>
+                            <td class="code">layout: elk.stress</td>
+                            <td>网络图</td>
+                        </tr>
+                        <tr>
+                            <td>elk.force</td>
+                            <td class="code">layout: elk.force</td>
+                            <td>力导向布局</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Style Presets -->
+            <section>
+                <h2>风格预设（3种）</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>风格</th>
+                            <th>描述</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="code">minimal</td>
+                            <td>单色、简洁线条 —— 适合技术文档</td>
+                        </tr>
+                        <tr>
+                            <td class="code">professional</td>
+                            <td>语义颜色、清晰层次（默认）</td>
+                        </tr>
+                        <tr>
+                            <td class="code">colorful</td>
+                            <td>高对比度、鲜艳 —— 适合演示</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Dependencies -->
+            <section>
+                <h2>核心依赖</h2>
+                <div class="dependencies">
+                    <div class="dep-item">
+                        <div class="dep-name">jsdom</div>
+                        <div class="dep-version">^28.1.0</div>
+                        <div class="dep-purpose">服务端 DOM 解析，用于 Mermaid 语法校验</div>
+                    </div>
+                    <div class="dep-item">
+                        <div class="dep-name">mermaid</div>
+                        <div class="dep-version">^11.13.0</div>
+                        <div class="dep-purpose">图表语法引擎，核心渲染器</div>
+                    </div>
+                    <div class="dep-item">
+                        <div class="dep-name">puppeteer</div>
+                        <div class="dep-version">^24.39.1</div>
+                        <div class="dep-purpose">无头 Chrome 渲染，用于图片导出</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Support Matrix -->
+            <section>
+                <h2>功能支持矩阵</h2>
+                <div class="support-matrix">
+                    <div class="matrix-header">功能</div>
+                    <div class="matrix-header">流程图</div>
+                    <div class="matrix-header">时序图</div>
+                    <div class="matrix-header">类图</div>
+                    <div class="matrix-header">ERD</div>
+                    <div class="matrix-header">C4</div>
+                    <div class="matrix-header">状态图</div>
+                    <div class="matrix-header">思维导图</div>
+
+                    <div class="matrix-row-label">语义颜色</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+
+                    <div class="matrix-row-label">布局引擎</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell no">-</div>
+
+                    <div class="matrix-row-label">子图</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell no">-</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell no">-</div>
+
+                    <div class="matrix-row-label">语法校验</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+
+                    <div class="matrix-row-label">图片导出</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                    <div class="matrix-cell yes">支持</div>
+                </div>
+            </section>
+
+            <footer>
+                mermaid-pro Skill | MIT License | Node.js >= 18 required
+            </footer>
+        </div>
+    </div>
+</body>
+</html>

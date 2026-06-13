@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>systems-thinking 架构蓝图</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --canvas-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --accent-color: #3b82f6;
+            --grid-color: #e2e8f0;
+            --line-color: #94a3b8;
+            --box-border: 1px solid var(--border-color);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .blueprint {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--canvas-color);
+            border: var(--box-border);
+        }
+
+        .header {
+            border-bottom: var(--box-border);
+            padding: 24px 32px;
+            background: var(--bg-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .section {
+            border-bottom: var(--box-border);
+            padding: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: var(--accent-color);
+        }
+
+        .grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .grid-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .grid-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .box {
+            border: var(--box-border);
+            padding: 20px;
+            background: var(--bg-color);
+        }
+
+        .box-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 0;
+        }
+
+        .flow-step {
+            flex: 1;
+            text-align: center;
+            border: var(--box-border);
+            padding: 16px 12px;
+            background: var(--bg-color);
+            min-width: 140px;
+        }
+
+        .flow-step .number {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: var(--accent-color);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 28px;
+            margin-bottom: 8px;
+        }
+
+        .flow-step .title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .flow-step .desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .flow-arrow {
+            font-size: 20px;
+            color: var(--line-color);
+        }
+
+        .syntax-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border: var(--box-border);
+        }
+
+        .syntax-box .comment {
+            color: #64748b;
+        }
+
+        .syntax-box .keyword {
+            color: #f472b6;
+        }
+
+        .syntax-box .variable {
+            color: #60a5fa;
+        }
+
+        .trap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .trap-table th,
+        .trap-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        .trap-table th {
+            background: var(--bg-color);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .trap-table td {
+            color: var(--text-secondary);
+        }
+
+        .trap-table tr:nth-child(even) {
+            background: #f1f5f9;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item::before {
+            content: '→';
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        .tag.reinforcing {
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+        .tag.balancing {
+            color: #16a34a;
+            border-color: #86efac;
+        }
+
+        .path {
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 4px 0;
+        }
+
+        .path::before {
+            content: '📁 ';
+        }
+
+        .legend {
+            display: flex;
+            gap: 24px;
+            padding: 16px 0;
+            border-top: var(--box-border);
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-line {
+            width: 30px;
+            height: 2px;
+            background: var(--line-color);
+        }
+
+        .legend-line.s-type {
+            background: #22c55e;
+        }
+
+        .legend-line.o-type {
+            background: #ef4444;
+        }
+
+        .concept-card {
+            padding: 12px 16px;
+            border: var(--box-border);
+            margin-bottom: 8px;
+            background: var(--bg-color);
+        }
+
+        .concept-card .name {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .concept-card .desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .flow-container {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="blueprint">
+        <div class="header">
+            <h1>systems-thinking 架构蓝图</h1>
+            <div class="subtitle">系统思考教练 — 基于丹尼斯·舍伍德《系统思考》方法论的结构化采访框架</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">五阶段采访流程</div>
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="number">1</div>
+                    <div class="title">问题边界探索</div>
+                    <div class="desc">核心问题、关键因素、边界范围</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="number">2</div>
+                    <div class="title">因果关系梳理</div>
+                    <div class="desc">变量驱动、S/O连接、时滞识别</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="number">3</div>
+                    <div class="title">回路识别</div>
+                    <div class="desc">追踪完整回路、判断R/B类型</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="number">4</div>
+                    <div class="title">系统循环图绘制</div>
+                    <div class="desc">遵循12条黄金法则</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="number">5</div>
+                    <div class="title">杠杆解识别</div>
+                    <div class="desc">找到约束、松开刹车</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">会话管理生命周期</div>
+            <div class="grid grid-4" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="box">
+                    <div class="box-title">启动</div>
+                    <div class="list-item">检查 ~/.systems-thinking/sessions/</div>
+                    <div class="list-item">展示历史会话选择菜单</div>
+                    <div class="list-item">用户选择：继续或新建</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">推进</div>
+                    <div class="list-item">完成一个阶段提问</div>
+                    <div class="list-item">保存检查点（Write）</div>
+                    <div class="list-item">更新 stage 字段</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">暂停</div>
+                    <div class="list-item">用户请求暂停时</div>
+                    <div class="list-item">记录中断点和下一步</div>
+                    <div class="list-item">告知下次可继续</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">恢复</div>
+                    <div class="list-item">读取会话文件</div>
+                    <div class="list-item">展示恢复摘要</div>
+                    <div class="list-item">从当前阶段继续</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">系统循环图语法</div>
+            <div class="syntax-box">
+<span class="comment">// 基础连接语法</span>
+<span class="variable">[变量A]</span> <span class="keyword">--S--&gt;</span> <span class="variable">[变量B]</span>   <span class="comment">// 同向变化（A↑ → B↑）</span>
+<span class="variable">[变量A]</span> <span class="keyword">--O--&gt;</span> <span class="variable">[变量B]</span>   <span class="comment">// 反向变化（A↑ → B↓）</span>
+<span class="variable">[变量A]</span> <span class="keyword">--S(时滞)--&gt;</span> <span class="variable">[变量B]</span>   <span class="comment">// 存在时间延迟</span>
+
+<span class="comment">// 增强回路示例</span>
+R1: <span class="variable">[压力]</span> <span class="keyword">--S--&gt;</span> <span class="variable">[加班]</span> <span class="keyword">--S--&gt;</span> <span class="variable">[疲劳]</span> <span class="keyword">--O--&gt;</span> <span class="variable">[效率]</span> <span class="keyword">--O--&gt;</span> <span class="variable">[压力]</span>
+    【增强回路 — 恶性循环】
+
+<span class="comment">// 调节回路示例</span>
+B1: <span class="variable">[目标]</span> <span class="keyword">--S--&gt;</span> <span class="variable">[差距]</span> <span class="keyword">--S--&gt;</span> <span class="variable">[行动]</span> <span class="keyword">--S--&gt;</span> <span class="variable">[实际]</span> <span class="keyword">--O--&gt;</span> <span class="variable">[差距]</span>
+    【调节回路 — 趋向目标】</span>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-line s-type"></div> S型连接：同向</div>
+                <div class="legend-item"><div class="legend-line o-type"></div> O型连接：反向</div>
+                <div class="legend-item"><span class="tag reinforcing">偶O增强</span> 增强回路</div>
+                <div class="legend-item"><span class="tag balancing">奇O调节</span> 调节回路</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">参考资源架构</div>
+            <div class="grid grid-2">
+                <div class="box">
+                    <div class="box-title">核心文档</div>
+                    <div class="path">SKILL.md</div>
+                    <div class="path">CLAUDE.md</div>
+                    <div class="path">README.md</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">参考文件结构</div>
+                    <div class="path">references/core-concepts.md</div>
+                    <div class="path">references/interview-guide.md</div>
+                    <div class="path">references/thinking-tools.md</div>
+                    <div class="path">references/common-pitfalls.md</div>
+                    <div class="path">references/output-template.md</div>
+                    <div class="path">references/session-management.md</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">案例文件</div>
+                    <div class="path">examples/employee-turnover.md</div>
+                    <div class="path">examples/product-feature-creep.md</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">会话存储</div>
+                    <div class="path">~/.systems-thinking/sessions/</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">思维陷阱分类</div>
+            <div class="grid grid-2">
+                <div class="box">
+                    <div class="box-title">认知偏差类</div>
+                    <div class="list-item">线性思维 — 忽略反馈回路</div>
+                    <div class="list-item">过度简化 — 遗漏关键因素</div>
+                    <div class="list-item">单一视角 — 只从一个角度看</div>
+                    <div class="list-item">静态思维 — 只看快照不看演变</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">行为模式类</div>
+                    <div class="list-item">时滞忽视 — 期待立竿见影</div>
+                    <div class="list-item">猛踩油门 — 强行推动增强回路</div>
+                    <div class="list-item">症状解陷阱 — 只处理表面症状</div>
+                    <div class="list-item">行动偏见 — 害怕什么都不做</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">分析工具类</div>
+                    <div class="list-item">爱上图表 — 拒绝修改</div>
+                    <div class="list-item">数据迷信 — 忽视模糊变量</div>
+                    <div class="list-item">快速判断 — 过早下结论</div>
+                    <div class="list-item">工具误用 — 机械套用原型</div>
+                </div>
+                <div class="box">
+                    <div class="box-title">系统边界类</div>
+                    <div class="list-item">局部最优 — 优化局部损害整体</div>
+                    <div class="list-item">边界错误 — 范围太窄或太宽</div>
+                    <div class="list-item">归因错误 — 归因个人忽略系统</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">方法论基础</div>
+            <div class="grid grid-3">
+                <div>
+                    <div class="concept-card">
+                        <div class="name">三大支柱</div>
+                        <div class="desc">整体视角 + 反馈驱动 + 因果连接</div>
+                    </div>
+                    <div class="concept-card">
+                        <div class="name">杠杆解哲学</div>
+                        <div class="desc">不要猛踩油门，松开刹车就够了</div>
+                    </div>
+                    <div class="concept-card">
+                        <div class="name">采访者角色</div>
+                        <div class="desc">通过提问引导用户自己发现系统结构</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="concept-card">
+                        <div class="name">增强回路 (R)</div>
+                        <div class="desc">偶数个O → 指数增长/衰退</div>
+                    </div>
+                    <div class="concept-card">
+                        <div class="name">调节回路 (B)</div>
+                        <div class="desc">奇数个O → 趋向目标，可能振荡</div>
+                    </div>
+                    <div class="concept-card">
+                        <div class="name">成长上限</div>
+                        <div class="desc">增强回路 + 调节回路组合</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="concept-card">
+                        <div class="name">模糊变量</div>
+                        <div class="desc">难以量化但真实存在，使用定性描述</div>
+                    </div>
+                    <div class="concept-card">
+                        <div class="name">时滞</div>
+                        <div class="desc">因果间的时间延迟，需要耐心</div>
+                    </div>
+                    <div class="concept-card">
+                        <div class="name">悬摆</div>
+                        <div class="desc">系统边界外的输入/输出变量</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="border-bottom: none;">
+            <div class="section-title">12条黄金法则</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">1. 了解问题的边界</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">2. 从有趣的地方开始</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">3. 询问驱动和被驱动</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px; color: var(--accent-color);">4. 不要陷入混乱</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px; color: var(--accent-color);">5. 不要使用动词，请使用名词</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px; color: var(--accent-color);">6. 不要使用"在...方面增长/降低"</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">7. 不要害怕模糊变量</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">8. 及时确定连接类型（S/O）</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">9. 坚持就是胜利</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">10. 好图表必须反映实况</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">11. 不要爱上你的图表</div>
+                <div style="padding: 10px; border: var(--box-border); background: var(--bg-color); font-size: 12px;">12. 没有"已经完成"的图表</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

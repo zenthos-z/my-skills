@@ -108,7 +108,8 @@ def build_lark_cli_command(
     records: List[dict],
     app_token: str,
     table_id: str,
-    lark_cli_path: str = "lark-cli"
+    lark_cli_path: str = "lark-cli",
+    identity: str = "user"
 ) -> str:
     """
     构建 lark-cli 命令
@@ -116,13 +117,12 @@ def build_lark_cli_command(
     使用 lark-cli api 方式调用飞书多维表格接口：
     POST /open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_create
 
-    注意：lark-cli api 子命令不支持 --id 参数，使用 --as bot 即可指定 bot 身份。
-
     Args:
         records: 要插入的记录列表
         app_token: Bitable app token
         table_id: 表 ID
         lark_cli_path: lark-cli 可执行文件名
+        identity: 飞书身份标识（user 或 bot），默认 user
 
     Returns:
         完整的 shell 命令字符串
@@ -139,7 +139,7 @@ def build_lark_cli_command(
         "api",
         "POST",
         f'"{api_path}"',
-        "--as bot",
+        f"--as {identity}",
         f"--data '{body_json}'"
     ]
 
@@ -265,6 +265,9 @@ def main():
         "commands": []
     }
 
+    # 统一读取飞书身份标识
+    identity = feishu_config.get("identity", "user")
+
     # 处理资源
     if args.resource_json:
         resource_path = Path(args.resource_json)
@@ -283,7 +286,8 @@ def main():
             cmd = build_lark_cli_command(
                 result["resources"],
                 resource_app_token,
-                resource_table_id
+                resource_table_id,
+                identity=identity
             )
             result["commands"].append({
                 "type": "resource",
@@ -309,7 +313,8 @@ def main():
             cmd = build_lark_cli_command(
                 result["engineering"],
                 engineering_app_token,
-                engineering_table_id
+                engineering_table_id,
+                identity=identity
             )
             result["commands"].append({
                 "type": "engineering",
@@ -323,7 +328,6 @@ def main():
         report_type = "周报" if args.weekly_report else "日报"
 
         daily_report_table_id = feishu_config.get("dailyReportTableId", feishu_config.get("daily_report_table_id", ""))
-        identity = feishu_config.get("identity", "user")
 
         if not bitable_app_token or not daily_report_table_id:
             print("Error: Missing feishu bitableAppToken or dailyReportTableId in config", file=sys.stderr)

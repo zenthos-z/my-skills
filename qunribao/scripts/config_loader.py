@@ -254,6 +254,13 @@ class ConfigLoader:
                 return default
         return value
 
+    @property
+    def sources(self) -> list:
+        """已加载的配置来源列表"""
+        if self._config is None:
+            self.load()
+        return list(self._sources)
+
 
 # 全局配置实例
 _config_loader: Optional[ConfigLoader] = None
@@ -272,3 +279,11 @@ def reload_config() -> Dict[str, Any]:
     global _config_loader
     _config_loader = ConfigLoader()
     return _config_loader.load()
+
+
+def get_config_sources() -> list:
+    """获取配置来源列表（调试用）"""
+    global _config_loader
+    if _config_loader is None:
+        return []
+    return _config_loader.sources

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>quick-img 架构蓝图</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --canvas-color: #ffffff;
+            --border-color: #cbd5e1;
+            --border-dark: #94a3b8;
+            --primary-color: #0f172a;
+            --secondary-color: #64748b;
+            --accent-color: #3b82f6;
+            --grid-line: #e2e8f0;
+            --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            line-height: 1.6;
+        }
+
+        .blueprint {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 60px;
+            background-color: var(--canvas-color);
+            border: 2px solid var(--border-color);
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .header {
+            border-bottom: 3px solid var(--border-dark);
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+        }
+
+        .header .meta {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--secondary-color);
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background-color: var(--border-dark);
+            border: 2px solid var(--border-dark);
+        }
+
+        .diagram {
+            border: 2px solid var(--border-color);
+            padding: 30px;
+            margin-bottom: 30px;
+            background-color: #fafbfc;
+        }
+
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .flow-item {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            background-color: var(--canvas-color);
+            font-weight: 500;
+        }
+
+        .flow-arrow {
+            font-size: 24px;
+            color: var(--border-dark);
+        }
+
+        .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .mode-card {
+            border: 2px solid var(--border-color);
+            padding: 25px;
+            background-color: var(--canvas-color);
+        }
+
+        .mode-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .mode-card .tag {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 8px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .mode-card p {
+            font-size: 14px;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .mode-card .example {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background-color: var(--bg-color);
+            padding: 10px;
+            margin-top: 15px;
+            border-left: 3px solid var(--border-dark);
+        }
+
+        .config-tree {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .config-box {
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            min-width: 200px;
+            text-align: center;
+            background-color: var(--canvas-color);
+        }
+
+        .config-box h4 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .config-box ul {
+            text-align: left;
+            font-size: 13px;
+            color: var(--secondary-color);
+            list-style-position: inside;
+        }
+
+        .ratio-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .ratio-box {
+            border: 1px solid var(--border-color);
+            padding: 10px 5px;
+            text-align: center;
+            font-size: 12px;
+            background-color: var(--canvas-color);
+        }
+
+        .ratio-box.popular {
+            border: 2px solid var(--border-dark);
+            background-color: var(--bg-color);
+        }
+
+        .ratio-box .ratio {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .ratio-box .name {
+            font-size: 10px;
+            color: var(--secondary-color);
+            margin-top: 4px;
+        }
+
+        .resolution-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .resolution-table th,
+        .resolution-table td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .resolution-table th {
+            background-color: var(--bg-color);
+            font-weight: 600;
+        }
+
+        .resolution-table .mono {
+            font-family: var(--font-mono);
+        }
+
+        .template-flow {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: var(--bg-color);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .template-step {
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            background-color: var(--canvas-color);
+            font-size: 13px;
+        }
+
+        .template-arrow {
+            color: var(--border-dark);
+        }
+
+        .siyuan-flow {
+            border: 2px solid var(--border-color);
+            padding: 25px;
+            background-color: var(--canvas-color);
+        }
+
+        .siyuan-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .siyuan-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .siyuan-step .num {
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--border-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
+        .siyuan-step .content {
+            flex: 1;
+        }
+
+        .siyuan-step .content h4 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .siyuan-step .content p {
+            font-size: 13px;
+            color: var(--secondary-color);
+        }
+
+        .siyuan-step .content code {
+            font-family: var(--font-mono);
+            background-color: var(--bg-color);
+            padding: 2px 6px;
+            font-size: 11px;
+        }
+
+        .preset-cards {
+            display: flex;
+            gap: 15px;
+        }
+
+        .preset-card {
+            flex: 1;
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            background-color: var(--canvas-color);
+        }
+
+        .preset-card h4 {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .preset-card .params {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .note {
+            margin-top: 30px;
+            padding: 15px;
+            border-left: 3px solid var(--border-dark);
+            background-color: var(--bg-color);
+            font-size: 13px;
+            color: var(--secondary-color);
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="blueprint">
+        <div class="header">
+            <h1>quick-img 架构蓝图</h1>
+            <div class="meta">版本 1.1.0 | DMX Gemini 3.1 Flash Image Preview | 生成高质量图片</div>
+        </div>
+
+        <!-- 三种使用模式 -->
+        <div class="section">
+            <div class="section-title">三种使用模式</div>
+            <div class="modes-grid">
+                <div class="mode-card">
+                    <span class="tag">Direct Prompt</span>
+                    <h3>提示词直出</h3>
+                    <p>直接输入提示词生成图片，最常用模式，零配置。</p>
+                    <p><strong>适用场景：</strong>自由创作、概念图、快速生图、思源笔记内容生图</p>
+                    <div class="example">python scripts/generate_image.py --prompt "AI 概念艺术" --ratio 16:9 --size 2K</div>
+                </div>
+                <div class="mode-card">
+                    <span class="tag">Template</span>
+                    <h3>模板生成</h3>
+                    <p>读取文件内容，套用生图模板后生成信息图。</p>
+                    <p><strong>适用场景：</strong>Markdown 文档转配图、日报信息图</p>
+                    <div class="example">python scripts/generate_image.py --input article.md --ratio 4:5 --size 2K</div>
+                </div>
+                <div class="mode-card">
+                    <span class="tag">Refine</span>
+                    <h3>精炼后生图</h3>
+                    <p>长内容先提炼，展示精炼结果，确认后再生成。</p>
+                    <p><strong>适用场景：</strong>内容过长、需要提炼核心信息</p>
+                    <div class="example">Claude 行为层处理，无额外参数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API 调用架构 -->
+        <div class="section">
+            <div class="section-title">API 调用架构</div>
+            <div class="diagram">
+                <div class="flow">
+                    <div class="flow-item">用户</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item">Claude Code</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item">generate_image.py</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item">DMX API</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item">图片输出</div>
+                </div>
+            </div>
+            <div class="note">
+                DMX API 端点: https://www.dmxapi.cn/v1beta/models/gemini-3.1-flash-image-preview-ssvip:generateContent
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- 宽高比矩阵 -->
+            <div class="section">
+                <div class="section-title">宽高比矩阵（14种）</div>
+                <div class="ratio-grid">
+                    <div class="ratio-box popular">
+                        <div class="ratio">1:1</div>
+                        <div class="name">正方形</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">1:4</div>
+                        <div class="name">极竖</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">1:8</div>
+                        <div class="name">超长竖图</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">2:3</div>
+                        <div class="name">人像竖版</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">3:2</div>
+                        <div class="name">单反比例</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">3:4</div>
+                        <div class="name">竖版文档</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">4:1</div>
+                        <div class="name">极宽</div>
+                    </div>
+                    <div class="ratio-box popular">
+                        <div class="ratio">4:3</div>
+                        <div class="name">标准文档</div>
+                    </div>
+                    <div class="ratio-box popular">
+                        <div class="ratio">4:5</div>
+                        <div class="name">竖版推荐</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">5:4</div>
+                        <div class="name">传统照片</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">8:1</div>
+                        <div class="name">超长横图</div>
+                    </div>
+                    <div class="ratio-box popular">
+                        <div class="ratio">9:16</div>
+                        <div class="name">竖屏</div>
+                    </div>
+                    <div class="ratio-box popular">
+                        <div class="ratio">16:9</div>
+                        <div class="name">宽屏</div>
+                    </div>
+                    <div class="ratio-box">
+                        <div class="ratio">21:9</div>
+                        <div class="name">超宽屏</div>
+                    </div>
+                </div>
+                <div class="note" style="margin-top: 20px;">常用比例：4:5（日报/小红书）、1:1（头像）、16:9（PPT封面）、9:16（手机壁纸）、4:3（文档插图）</div>
+            </div>
+
+            <!-- 分辨率档位 -->
+            <div class="section">
+                <div class="section-title">分辨率档位（4档）</div>
+                <table class="resolution-table">
+                    <thead>
+                        <tr>
+                            <th>档位</th>
+                            <th>像素</th>
+                            <th>Token</th>
+                            <th>适用场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono">0.5K</td>
+                            <td class="mono">512x*</td>
+                            <td class="mono">747</td>
+                            <td>快速预览、草稿测试</td>
+                        </tr>
+                        <tr>
+                            <td class="mono">1K</td>
+                            <td class="mono">1024x*</td>
+                            <td class="mono">1120</td>
+                            <td>标准质量、日常配图</td>
+                        </tr>
+                        <tr>
+                            <td class="mono">2K</td>
+                            <td class="mono">2048x*</td>
+                            <td class="mono">1120</td>
+                            <td>推荐、高清信息图</td>
+                        </tr>
+                        <tr>
+                            <td class="mono">4K</td>
+                            <td class="mono">4096x*</td>
+                            <td class="mono">2000</td>
+                            <td>超高清、印刷级别</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="note">* 长边根据宽高比自动计算</div>
+            </div>
+        </div>
+
+        <!-- 配置层级 -->
+        <div class="section">
+            <div class="section-title">配置层级结构</div>
+            <div class="config-tree">
+                <div class="config-box">
+                    <h4>config.json</h4>
+                    <ul>
+                        <li>API 配置</li>
+                        <li>14 种宽高比定义</li>
+                        <li>4 档分辨率规格</li>
+                        <li>预设模板</li>
+                    </ul>
+                </div>
+                <div class="flow-arrow">↔</div>
+                <div class="config-box">
+                    <h4>.env</h4>
+                    <ul>
+                        <li>DMX_API_KEY</li>
+                    </ul>
+                </div>
+                <div class="flow-arrow">↔</div>
+                <div class="config-box">
+                    <h4>预设 Presets</h4>
+                    <ul>
+                        <li>square_post (1:1, 1K)</li>
+                        <li>wide_banner (16:9, 2K)</li>
+                        <li>mobile_story (9:16, 2K)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <!-- 模板系统 -->
+            <div class="section">
+                <div class="section-title">模板系统</div>
+                <div class="template-flow">
+                    <div class="template-step">文件内容</div>
+                    <div class="template-arrow">→</div>
+                    <div class="template-step">读取模板</div>
+                    <div class="template-arrow">→</div>
+                    <div class="template-step">{{content}} 替换</div>
+                    <div class="template-arrow">→</div>
+                    <div class="template-step">生成提示词</div>
+                </div>
+                <div class="note">
+                    可用模板：生图模板（信息图表风格）、海报模板（通用海报布局）<br>
+                    自定义模板：在 assets/templates/ 创建 .txt 文件，使用 {{content}} 作为占位符
+                </div>
+            </div>
+
+            <!-- 批量抽卡 -->
+            <div class="section">
+                <div class="section-title">批量抽卡模式</div>
+                <div class="diagram">
+                    <p style="margin-bottom: 15px; font-size: 14px; color: var(--secondary-color);">同一提示词生成多张，由 API 随机产出不同结果</p>
+                    <div class="flow">
+                        <div class="flow-item" style="min-width: 100px;">Prompt</div>
+                        <div class="flow-arrow">×</div>
+                        <div class="flow-item" style="min-width: 60px;">--count N</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-item" style="min-width: 80px;">N 张不同图片</div>
+                    </div>
+                </div>
+                <div class="note">
+                    <strong>重要：</strong>不要修改提示词，不要多次调用脚本。API 的随机性会产生不同结果。
+                </div>
+            </div>
+        </div>
+
+        <!-- SiYuan 集成 -->
+        <div class="section">
+            <div class="section-title">SiYuan 笔记集成</div>
+            <div class="siyuan-flow">
+                <div class="siyuan-step">
+                    <div class="num">1</div>
+                    <div class="content">
+                        <h4>读取笔记内容</h4>
+                        <p>通过 SiYuan MCP 搜索并获取笔记内容</p>
+                        <code>mcp__siyuan__search(action="fulltext", query="笔记标题")</code>
+                    </div>
+                </div>
+                <div class="siyuan-step">
+                    <div class="num">2</div>
+                    <div class="content">
+                        <h4>选择模式</h4>
+                        <p>短内容 → Direct Prompt 直接生图</p>
+                        <p>长内容 → Refine 模式先精炼</p>
+                    </div>
+                </div>
+                <div class="siyuan-step">
+                    <div class="num">3</div>
+                    <div class="content">
+                        <h4>生成图片</h4>
+                        <p>调用 generate_image.py 生成图片</p>
+                        <code>python scripts/generate_image.py --prompt "笔记内容" --ratio 4:5 --size 2K</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API 特性 -->
+        <div class="section">
+            <div class="section-title">API 特性</div>
+            <div class="two-column">
+                <div class="diagram">
+                    <h4 style="margin-bottom: 15px;">图片搜索（Image Search）</h4>
+                    <p style="font-size: 14px; color: var(--secondary-color);">启用图片搜索，让模型参考真实图片生成</p>
+                    <p style="font-size: 13px; margin-top: 10px;"><strong>参数：</strong>--image-search</p>
+                    <p style="font-size: 13px;"><strong>场景：</strong>需要参考特定风格、真实物体或场景时开启</p>
+                    <p style="font-size: 13px;"><strong>注意：</strong>会增加生成时间，但能提升特定场景的真实度</p>
+                </div>
+                <div class="diagram">
+                    <h4 style="margin-bottom: 15px;">Google 搜索</h4>
+                    <p style="font-size: 14px; color: var(--secondary-color);">启用 Google 搜索获取实时信息</p>
+                    <p style="font-size: 13px; margin-top: 10px;"><strong>参数：</strong>--google-search</p>
+                    <p style="font-size: 13px;"><strong>场景：</strong>需要最新信息或特定知识时开启</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输出配置 -->
+        <div class="section">
+            <div class="section-title">输出配置</div>
+            <table class="resolution-table">
+                <tbody>
+                    <tr>
+                        <td style="width: 30%;"><strong>默认格式</strong></td>
+                        <td>png</td>
+                    </tr>
+                    <tr>
+                        <td><strong>时间戳格式</strong></td>
+                        <td class="mono">%Y%m%d_%H%M%S</td>
+                    </tr>
+                    <tr>
+                        <td><strong>文件名长度</strong></td>
+                        <td>最多 10 个字符</td>
+                    </tr>
+                    <tr>
+                        <td><strong>默认宽高比</strong></td>
+                        <td>4:5</td>
+                    </tr>
+                    <tr>
+                        <td><strong>默认分辨率</strong></td>
+                        <td>2K</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="note">
+            <strong>技术栈：</strong>Python + requests + DMX Gemini 3.1 Flash Image Preview API<br>
+            <strong>版本：</strong>1.1.0<br>
+            <strong>获取 API Key：</strong>https://www.dmxapi.cn
+        </div>
+    </div>
+</body>
+</html>
