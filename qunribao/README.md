@@ -2,7 +2,7 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-blue)](https://claude.ai/code)
 
-从微信群聊数据自动生成日报、周报、资源汇总和议题追踪报告。基于 WeFlow API 获取聊天数据，Claude 完成分析和报告生成。
+从微信群聊数据自动生成日报、周报、资源汇总和议题追踪报告。基于信号源（WeFlow 或 CipherTalk）获取聊天数据，Claude 完成分析和报告生成。
 
 核心能力：日报 / 周报 / 资源提取 / 工程问题归纳 / 议题持续追踪 / 配图生成
 
@@ -49,9 +49,11 @@ cp -r my-skills/qunribao .claude/skills/
 
 ## 前置条件
 
-1. **WeFlow 应用已启动**，HTTP API 服务开启（默认端口 5031）
+1. **信号源应用已启动**，HTTP API 服务开启——二选一：
+   - WeFlow（默认端口 5031），或
+   - CipherTalk（默认端口 5033）
 2. Python 3.8+ + `requests` 库
-3. 微信群聊 ID（格式如 `123456789@chatroom`，从 WeFlow 获取）
+3. 微信群聊 ID（格式如 `123456789@chatroom`，从信号源获取）
 
 ---
 
@@ -73,7 +75,7 @@ cp -r my-skills/qunribao .claude/skills/
 ### 方式 B：环境变量（最快，适合临时使用）
 
 ```bash
-# 必须配置
+# 必须配置（以 WeFlow 为例；用 CipherTalk 时设 QUNRIBAO_DATASOURCE_TYPE=ciphertalk 并改用 QUNRIBAO_CIPHERTALK_*）
 export QUNRIBAO_WEFLOW_CHATROOMID="你的群ID@chatroom"
 export QUNRIBAO_WEFLOW_BASEURL="http://127.0.0.1:5031"
 export QUNRIBAO_OUTPUTDIR="/path/to/reports"
@@ -85,7 +87,7 @@ export QUNRIBAO_MANAGERS="张三:项目发起人,李四:指导老师"
 export QUNRIBAO_LEADERS="王五:班长"
 ```
 
-格式规则：`QUNRIBAO_` + 配置路径下划线分隔大写（如 `weflow.chatroomId` → `QUNRIBAO_WEFLOW_CHATROOMID`）。
+格式规则：`QUNRIBAO_` + 配置路径下划线分隔大写（如 `ciphertalk.chatroomId` → `QUNRIBAO_CIPHERTALK_CHATROOMID`）。
 
 ### 方式 C：手动编辑
 
@@ -95,6 +97,9 @@ export QUNRIBAO_LEADERS="王五:班长"
 # qunribao 本地配置
 
 <!-- ⚠️ 本文件包含敏感信息，已被 .gitignore 排除。勿提交到版本控制。 -->
+
+## 数据源
+- type: weflow   # 或 ciphertalk
 
 ## WeFlow API
 - baseUrl: http://127.0.0.1:5031
@@ -137,8 +142,10 @@ export QUNRIBAO_LEADERS="王五:班长"
 
 | 配置项 | 环境变量 | config.local.md 中的键 |
 |--------|----------|----------------------|
+| 信号源类型 | `QUNRIBAO_DATASOURCE_TYPE` | `数据源 → type`（weflow/ciphertalk） |
 | 群聊 ID | `QUNRIBAO_WEFLOW_CHATROOMID` | `WeFlow API → chatroomId` |
 | API 地址 | `QUNRIBAO_WEFLOW_BASEURL` | `WeFlow API → baseUrl` |
+| CipherTalk 群 ID | `QUNRIBAO_CIPHERTALK_CHATROOMID` | `CipherTalk API → chatroomId` |
 | 报告输出 | `QUNRIBAO_OUTPUTDIR` | `目录 → outputDir` |
 | 管理者 | `QUNRIBAO_MANAGERS` | `人员 → 管理者/老师` |
 | 班长 | `QUNRIBAO_LEADERS` | `人员 → 班长/副班长` |
@@ -151,7 +158,9 @@ export QUNRIBAO_LEADERS="王五:班长"
 
 ### 数据来源
 
-**WeFlow** 是本地运行的微信数据提取工具，通过 HTTP API（端口 5031）提供群聊消息。
+**信号源**是本地运行的微信数据提取工具，通过 HTTP API 提供群聊消息。支持两种（通过 `datasource.type` 切换）：
+- **WeFlow**（默认端口 5031）
+- **CipherTalk**（默认端口 5033，base_url 含 `/v1`，群昵称经 ChatLab 端点获取）
 
 ### 核心脚本：chat_context.py
 
@@ -174,9 +183,9 @@ python scripts/chat_context.py --date 2026-03-29 --stats
 
 **输出文件**：`{tempDir}/chat_context_YYYYMMDD.md` — 格式化的聊天记录，图片以 `file:///` 路径嵌入。
 
-### WeFlow API 方法
+### 信号源客户端方法
 
-通过 `weflow_client.py` 提供的 API 客户端：
+通过 `weflow_client.py`（WeFlow）或 `ciphertalk_client.py`（CipherTalk，继承 WeFlowClient）提供的客户端，二者接口一致：
 
 | 方法 | 说明 |
 |------|------|
@@ -188,7 +197,7 @@ python scripts/chat_context.py --date 2026-03-29 --stats
 
 ### 消息解析能力
 
-`weflow_client.py` 能解析微信的原始 XML 消息格式：
+`weflow_client.py` / `ciphertalk_client.py` 能解析微信的原始 XML 消息格式（二者 rawContent XML 格式一致，解析逻辑复用）：
 
 - **引用消息**：提取被引用的消息内容和发送者
 - **链接卡片**：识别公众号文章、外部链接、小程序
@@ -243,6 +252,7 @@ Step 5+: 生成报告
 │   ├── chat_context.py             ← 聊天数据获取 + 文档生成
 │   ├── config_loader.py            ← 配置加载器
 │   ├── weflow_client.py            ← WeFlow API 客户端
+│   ├── ciphertalk_client.py        ← CipherTalk API 客户端（继承 WeFlowClient）
 │   ├── init.py                     ← CLI 初始化向导
 │   └── privacy_scanner.py          ← 隐私扫描（pre-commit hook）
 ├── assets/

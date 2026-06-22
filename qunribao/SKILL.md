@@ -1,7 +1,7 @@
 ---
 name: qunribao
 description: |
-  群日报生成系统 - 从 WeFlow API 获取微信群聊数据生成多类型报告，支持议题持续追踪。
+  群日报生成系统 - 从信号源（WeFlow 或 CipherTalk）获取微信群聊数据生成多类型报告，支持议题持续追踪。
 
   Use when:
   - 生成群聊日报/周报
@@ -20,9 +20,13 @@ description: |
 
 ## 前置条件
 
-**WeFlow 应用必须已启动并启用 HTTP API 服务**（端口 5031）。
+**信号源应用必须已启动并启用 HTTP API 服务**，二选一：
+- WeFlow（默认端口 5031），或
+- CipherTalk（默认端口 5033）
 
-> **唯一数据源**：所有聊天记录均通过 WeFlow API 获取，**禁止使用本地 JSON 文件作为数据源**。若 API 连接失败，需提醒用户开启 WeFlow 并等待重连，不得降级到本地文件。
+通过 `datasource.type` 配置项切换（`weflow` / `ciphertalk`），缺省为 `weflow`（向后兼容老配置）。
+
+> **唯一数据源**：所有聊天记录均通过配置的信号源 API 获取，**禁止使用本地 JSON 文件作为数据源**。若 API 连接失败，需提醒用户开启对应信号源并等待重连，不得降级到本地文件。
 
 ## 命令
 
@@ -78,9 +82,13 @@ Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生
 
 | 配置项                          | 说明                                        |
 | ---------------------------- | ----------------------------------------- |
-| `weflow.chatroomId`          | 群聊 ID（如 `12345678@chatroom`）              |
-| `weflow.token`               | API 鉴权 Token（WeFlow 强制要求）              |
+| `datasource.type`            | 信号源类型：`weflow`（默认）或 `ciphertalk`        |
+| `weflow.chatroomId`          | WeFlow 群聊 ID（`type=weflow` 时使用）           |
+| `weflow.token`               | WeFlow API 鉴权 Token                       |
 | `weflow.baseUrl`             | WeFlow API 地址（默认 `http://127.0.0.1:5031`） |
+| `ciphertalk.chatroomId`      | CipherTalk 群聊 ID（`type=ciphertalk` 时使用）  |
+| `ciphertalk.token`           | CipherTalk API 鉴权 Token（非强制）              |
+| `ciphertalk.baseUrl`         | CipherTalk API 地址（默认 `http://127.0.0.1:5033/v1`） |
 | `imageMode`                  | 图片处理：`describe`（默认，Vision API 分析）或 `direct`（嵌入，不可靠） |
 | `tempDir`                    | 临时文件目录                                    |
 | `outputDir`                  | 报告输出目录                                    |
@@ -100,12 +108,17 @@ Claude：读取日报 → 提炼内容 → 检查 quick-img 技能 → 调用生
 **敏感配置推荐环境变量方式**（无需创建 `config.local.md`）：
 
 ```bash
+# WeFlow（默认信号源）
 export QUNRIBAO_WEFLOW_CHATROOMID="your-chatroom-id@chatroom"
 export QUNRIBAO_WEFLOW_BASEURL="http://127.0.0.1:5031"
+# CipherTalk（切换信号源）
+export QUNRIBAO_DATASOURCE_TYPE="ciphertalk"
+export QUNRIBAO_CIPHERTALK_CHATROOMID="your-chatroom-id@chatroom"
+export QUNRIBAO_CIPHERTALK_BASEURL="http://127.0.0.1:5033/v1"
 export QUNRIBAO_OUTPUTDIR="/path/to/reports"
 ```
 
-格式：`QUNRIBAO_` + 配置路径下划线分隔（如 `weflow.chatroomId` → `QUNRIBAO_WEFLOW_CHATROOMID`）
+格式：`QUNRIBAO_` + 配置路径下划线分隔（如 `ciphertalk.chatroomId` → `QUNRIBAO_CIPHERTALK_CHATROOMID`）
 
 ## 数据获取脚本
 
@@ -231,7 +244,8 @@ qunribao/
 ├── scripts/
 │   ├── chat_context.py             # [可执行] 聊天上下文生成器
 │   ├── config_loader.py            # [核心] 多源配置加载器 (env > local > template)
-│   ├── weflow_client.py            # WeFlow API 客户端
+│   ├── weflow_client.py            # WeFlow API 客户端（信号源之一）
+│   ├── ciphertalk_client.py        # CipherTalk API 客户端（信号源之一，继承 WeFlowClient 复用 XML 解析）
 │   ├── replace_images.py           # [可执行] 图片描述合并与替换脚本 (describe模式)
 │   ├── memory_filename.py          # [可执行] 记忆文件名生成器 (日期+版本序号)
 │   ├── init.py                     # [可执行] 初始化向导
@@ -275,6 +289,6 @@ memory/
 
 ## 注意事项
 
-- **WeFlow API**：确保 WeFlow 应用已启动并启用 HTTP API（端口 5031）
+- **信号源 API**：确保信号源应用已启动并启用 HTTP API（WeFlow 端口 5031 / CipherTalk 端口 5033）
 
 - **编码**：脚本已处理 Windows 编码，输出 UTF-8

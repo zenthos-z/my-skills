@@ -49,26 +49,35 @@ else:
 > 这是唯一必须手动提供信息的步骤。
 
 ```
-AskUserQuestion (3 questions):
+AskUserQuestion (4 questions):
+  Q0: "使用哪个信号源？"
+      选项:
+        - "WeFlow（端口 5031，默认）" ← 大多数情况选这个
+        - "CipherTalk（端口 5033）"
+      类型: 选择题
+      → 决定 Q2 默认地址与最终写入的配置节
+
   Q1: "群聊 ID 是什么？"
-      格式提示: "在 WeFlow 中打开目标群聊，群 ID 格式如 123456789@chatroom"
+      格式提示: "在信号源中打开目标群聊，群 ID 格式如 123456789@chatroom"
       类型: 填空题（用户自由输入）
 
-  Q2: "WeFlow API 地址？"
+  Q2: "信号源 API 地址？"
       选项:
-        - "http://127.0.0.1:5031（本地默认）" ← 大多数情况选这个
+        - WeFlow: "http://127.0.0.1:5031（本地默认）"
+        - CipherTalk: "http://127.0.0.1:5033/v1（本地默认）"
         - "自定义地址"
       类型: 选择题
       → 选"自定义地址"时追问具体地址
 
-  Q3: "WeFlow API Token？"
-      格式提示: "WeFlow 现已要求 API 鉴权，请输入 Token（可在 WeFlow 设置中查看）"
+  Q3: "信号源 API Token？"
+      格式提示: "输入 Token（WeFlow 强制要求；CipherTalk 非强制，可在设置中查看）"
       类型: 填空题（用户自由输入）
 ```
 
 **收集结果**：
+- `datasource.type`: Q0 的选择（`weflow` / `ciphertalk`）
 - `chatroomId`: Q1 的输入
-- `baseUrl`: Q2 选择的地址（默认 `http://127.0.0.1:5031`）
+- `baseUrl`: Q2 选择的地址（WeFlow 默认 `http://127.0.0.1:5031`，CipherTalk 默认 `http://127.0.0.1:5033/v1`）
 - `token`: Q3 的输入（可选，留空则不鉴权）
 
 ---
@@ -359,6 +368,7 @@ AskUserQuestion (1 question):
 
 | 项目 | 值 |
 |------|-----|
+| 信号源 | WeFlow / CipherTalk |
 | 群聊 ID | 123456789@chatroom |
 | API 地址 | http://127.0.0.1:5031 |
 | 管理者 | 张三（项目发起人）、李四（技术指导） |
@@ -389,7 +399,10 @@ AskUserQuestion:
 
 <!-- ⚠️ 本文件包含敏感信息，已被 .gitignore 排除。勿提交到版本控制。 -->
 
-## WeFlow API
+## 数据源
+- type: {datasource.type}
+
+## WeFlow API   # 或 CipherTalk API（按 type 选择）
 - baseUrl: {baseUrl}
 - chatroomId: {chatroomId}
 

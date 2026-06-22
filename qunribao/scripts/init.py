@@ -84,18 +84,33 @@ class InitWizard:
 
         print("请提供以下配置信息（直接回车使用示例值）:\n")
 
+        # 信号源选择
+        print("[信号源选择]")
+        print("  1) WeFlow (默认, 端口 5031)")
+        print("  2) CipherTalk (端口 5033)")
+        ds_choice = input("选择信号源 [1/2], 默认 1: ").strip() or "1"
+        ds_type = "ciphertalk" if ds_choice == "2" else "weflow"
+
         # 群聊配置
+        print()
         print("[群聊配置]")
         chatroom_id = input("群ID (如: 123456789@chatroom): ").strip()
         config['chatroomId'] = chatroom_id or "YOUR_CHATROOM_ID@chatroom"
 
-        # WeFlow API 配置（唯一数据源）
+        # 信号源 API 配置（按所选类型收集）
         print()
-        print("[WeFlow API 配置]")
-        base_url = input("WeFlow服务地址 [http://127.0.0.1:5031]: ").strip() or "http://127.0.0.1:5031"
-        token = input("WeFlow API Token（留空则不使用鉴权）: ").strip() or None
+        if ds_type == "ciphertalk":
+            print("[CipherTalk API 配置]")
+            default_url = "http://127.0.0.1:5033/v1"
+            base_url = input(f"CipherTalk服务地址 [{default_url}]: ").strip() or default_url
+            token = input("CipherTalk API Token（留空则不使用鉴权）: ").strip() or None
+        else:
+            print("[WeFlow API 配置]")
+            default_url = "http://127.0.0.1:5031"
+            base_url = input(f"WeFlow服务地址 [{default_url}]: ").strip() or default_url
+            token = input("WeFlow API Token（留空则不使用鉴权）: ").strip() or None
         config['datasource'] = {
-            'type': 'weflow',
+            'type': ds_type,
             'baseUrl': base_url,
             'chatroomId': config['chatroomId'],
             'token': token,
@@ -161,13 +176,18 @@ class InitWizard:
     def _save_config(self, config: Dict[str, Any]):
         """保存本地配置为 Markdown"""
         ds = config.get('datasource', {})
+        ds_type = ds.get('type', 'weflow')
 
         lines = []
         lines.append("# qunribao 本地配置")
         lines.append("")
         lines.append("<!-- ⚠️ 本文件包含敏感信息，已被 .gitignore 排除。勿提交到版本控制。 -->")
         lines.append("")
-        lines.append("## WeFlow API")
+        lines.append("## 数据源")
+        lines.append(f"- type: {ds_type}")
+        lines.append("")
+        section_title = "CipherTalk API" if ds_type == "ciphertalk" else "WeFlow API"
+        lines.append(f"## {section_title}")
         lines.append(f"- baseUrl: {ds.get('baseUrl', '')}")
         lines.append(f"- chatroomId: {config.get('chatroomId', '')}")
         if ds.get('token'):

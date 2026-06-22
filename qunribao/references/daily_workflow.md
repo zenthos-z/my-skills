@@ -93,7 +93,8 @@ Step 10: 生成日报配图并上传到飞书（可选）
 
 读取本地配置：`assets/config.local.md`（或通过环境变量 `QUNRIBAO_*`），获取：
 
-- `weflow`: WeFlow API 配置（`baseUrl`, `chatroomId`）
+- `datasource.type`: 信号源类型（`weflow` / `ciphertalk`，缺省 `weflow`）
+- `weflow` / `ciphertalk`: 对应信号源的 API 配置（`baseUrl`, `chatroomId`, `token`）
 - `outputDir`, `memoryDir`, `memoryKeepVersions`: 输出和记忆配置
 - `managers`, `leaders`, `valueTopics`: 人员和议题配置
 - `imageMode`, `saveChatContext`, `tempDir`: 图片和临时文件配置
@@ -115,10 +116,10 @@ python scripts/chat_context.py --date <YYYY-MM-DD>
 
 参数详见：`SKILL.md` → 数据获取脚本
 
-**WeFlow API 连接失败处理**：若脚本输出 `❌ WeFlow API 连接失败`，**不可使用本地 JSON 文件作为替代数据源**。必须：
+**信号源 API 连接失败处理**：若脚本输出 `❌ {datasource.type} API 连接失败`，**不可使用本地 JSON 文件作为替代数据源**。必须：
 
-1. 向用户说明：「WeFlow API 连接失败（端口 5031），请确认 WeFlow 应用已启动并启用 HTTP API 服务。」
-2. 等待用户确认已开启 WeFlow
+1. 向用户说明：「信号源 API 连接失败，请确认对应应用（WeFlow 端口 5031 / CipherTalk 端口 5033）已启动并启用 HTTP API 服务。」
+2. 等待用户确认已开启信号源
 3. 重新执行脚本获取数据
 4. 重复直到连接成功
 

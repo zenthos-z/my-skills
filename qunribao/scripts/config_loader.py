@@ -90,6 +90,8 @@ class ConfigLoader:
         # Section 名称到 config key 的映射
         section_map = {
             'WeFlow API': 'weflow',
+            'CipherTalk API': 'ciphertalk',
+            '数据源': 'datasource',
             '目录': 'paths',
             '人员': 'personnel',
             '价值议题': 'valueTopics',

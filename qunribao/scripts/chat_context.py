@@ -818,6 +818,42 @@ class ChatContextGenerator:
         return "original"
 
 
+def create_client(config: Dict[str, Any]) -> tuple:
+    """根据配置创建信号源客户端（双源可切换）
+
+    依据 config["datasource"]["type"] 选择：
+      - "ciphertalk" → CipherTalkClient（从 config["ciphertalk"] 取连接参数）
+      - 其他/缺省    → WeFlowClient（从 config["weflow"] 取连接参数，向后兼容）
+
+    向后兼容：若无 datasource.type，默认走 weflow，行为与改造前完全一致。
+
+    Args:
+        config: 配置字典
+
+    Returns:
+        (client, chatroom_id) 元组；chatroom_id 缺省时为 None
+    """
+    ds_type = (config.get("datasource") or {}).get("type", "weflow")
+
+    if ds_type == "ciphertalk":
+        # 延迟 import：weflow-only 环境无需依赖 ciphertalk_client
+        from ciphertalk_client import CipherTalkClient
+        ds_config = config.get("ciphertalk", {})
+        client = CipherTalkClient(
+            base_url=ds_config.get("baseUrl", "http://127.0.0.1:5033/v1"),
+            token=ds_config.get("token"),
+        )
+        return client, ds_config.get("chatroomId")
+
+    # 默认 weflow（向后兼容）
+    ds_config = config.get("weflow", {})
+    client = WeFlowClient(
+        base_url=ds_config.get("baseUrl", "http://127.0.0.1:5031"),
+        token=ds_config.get("token"),
+    )
+    return client, ds_config.get("chatroomId")
+
+
 def generate_chat_context(
     config: Dict[str, Any],
     date: datetime,
@@ -839,17 +875,15 @@ def generate_chat_context(
     Returns:
         生成的文件路径
     """
-    # 创建客户端
-    weflow_config = config.get("weflow", {})
-    client = WeFlowClient(
-        base_url=weflow_config.get("baseUrl", "http://127.0.0.1:5031"),
-        token=weflow_config.get("token")
-    )
+    # 创建客户端（双源可切换：datasource.type 决定 weflow/ciphertalk）
+    client, chatroom_id = create_client(config)
+    if not chatroom_id:
+        raise ValueError("配置错误：未设置 chatroomId（weflow 或 ciphertalk 节）")
 
     # 创建生成器
     generator = ChatContextGenerator(
         client=client,
-        chatroom_id=weflow_config["chatroomId"],
+        chatroom_id=chatroom_id,
         config=config
     )
 
@@ -916,33 +950,30 @@ if __name__ == "__main__":
     output_dir = args.output or config.get('tempDir', 'temp')
     inline_images = args.direct
 
-    # 检查 WeFlow 配置（二次校验，提供友好错误提示）
-    weflow_config = config.get('weflow', {})
-    if not weflow_config.get('chatroomId'):
-        print("❌ 配置错误: 未设置 weflow.chatroomId")
+    # 创建客户端（双源可切换：datasource.type 决定 weflow/ciphertalk）
+    ds_type = (config.get('datasource') or {}).get('type', 'weflow')
+    client, chatroom_id = create_client(config)
+    if not chatroom_id:
+        print(f"❌ 配置错误: 未设置 {ds_type}.chatroomId")
         sys.exit(1)
-
-    # 创建客户端和生成器
-    client = WeFlowClient(
-        base_url=weflow_config.get('baseUrl', 'http://127.0.0.1:5031'),
-        token=weflow_config.get('token')
-    )
 
     generator = ChatContextGenerator(
         client=client,
-        chatroom_id=weflow_config['chatroomId'],
+        chatroom_id=chatroom_id,
         config=config
     )
 
     # 检查连接
     if not generator.health_check():
-        print("❌ WeFlow API 连接失败")
-        print("   请确认：")
-        print("   1. WeFlow 应用已启动")
-        print("   2. HTTP API 服务已启用（端口 5031）")
+        print(f"❌ {ds_type} API 连接失败")
+        print("   请确认信号源服务已启动并启用 HTTP API：")
+        if ds_type == 'ciphertalk':
+            print("   - CipherTalk（默认端口 5033）")
+        else:
+            print("   - WeFlow（默认端口 5031）")
         sys.exit(1)
 
-    print("✅ WeFlow API 连接正常\n")
+    print(f"✅ {ds_type} API 连接正常\n")
 
     # 生成文件名
     date_str = target_date.strftime(DATE_FMT_COMPACT)
