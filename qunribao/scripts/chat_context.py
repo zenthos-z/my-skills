@@ -532,8 +532,9 @@ class ChatContextGenerator:
                 tag = "表情" if msg_type == 47 else "图片"
                 lines.append(f"[{tag}|{media_path}]")
             elif msg.get("media_url"):
-                print(f"警告: 图片未能下载到本地: {msg.get('media_url', '')[:80]}")
-                lines.append(f"[图片|{msg.get('media_url')}]")
+                tag = "表情" if msg_type == 47 else "图片"
+                print(f"警告: {tag}未能下载到本地: {msg.get('media_url', '')[:80]}")
+                lines.append(f"[{tag}|{msg.get('media_url')}]")
             else:
                 lines.append("[图片]" if msg_type == 3 else "[表情]")
         elif content:
