@@ -40,7 +40,12 @@ rawContent XML 格式完全一致），仅重写 HTTP 交互层以适配 CipherT
 """
 
 import sys
+import os
+import glob
 import shutil
+import tempfile
+import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -86,6 +91,9 @@ class CipherTalkClient(WeFlowClient):
         # 群成员/联系人缓存（get_group_members 需拉取 contacts，避免重复请求）
         self._members_cache: Optional[Dict[str, Any]] = None
         self._contacts_cache: Optional[Dict[str, Any]] = None
+        # HEVC 兜底转码用：最近一次 get_all_messages 的群 ID
+        self._last_chatroom_id: Optional[str] = None
+        self._ciphertalk_data_root: Optional[str] = None
 
     # ------------------------------------------------------------------
     # 内部工具
@@ -196,6 +204,9 @@ class CipherTalkClient(WeFlowClient):
         Returns:
             完整消息列表（CipherTalk 原始消息字典）
         """
+        # 记录群 ID，供 convert_to_standard_format 的 HEVC 兜底转码推断本地路径
+        self._last_chatroom_id = chatroom_id
+
         all_messages: List[Dict[str, Any]] = []
         offset = 0
         limit = 1000
@@ -486,6 +497,12 @@ class CipherTalkClient(WeFlowClient):
                 or media.get("localPath")
                 or media.get("filePath")
             )
+            # HEVC 兜底：ciphertalk 对 HEVC/HEIF 编码图不产出 imageCachePath（缺 HEVC
+            # 解码器），但本地存了 {dat}_hd.hevc 裸流 → 用 ffmpeg 解码取内容最丰富的
+            # 帧转 JPG。没装 ffmpeg / 路径不存在 / 转码失败则跳过（不影响主流程）。
+            if not cache_path and media.get("imageDatName"):
+                cache_path = self._hevc_to_jpg(
+                    media["imageDatName"], msg.get("createTime"), media_export_path)
 
             std_msg: Dict[str, Any] = {
                 "id": msg.get("localId"),
@@ -535,6 +552,62 @@ class CipherTalkClient(WeFlowClient):
             standardized.append(std_msg)
 
         return standardized
+
+    def _hevc_to_jpg(
+        self,
+        image_dat_name: str,
+        create_time: Any,
+        media_export_path: Optional[str] = None
+    ) -> Optional[str]:
+        """HEVC 兜底：把 ciphertalk 未转码的 HEVC 图转成 JPG
+
+        ciphertalk 对 HEVC/HEIF 编码的图不产出 imageCachePath（缺 HEVC 解码器），
+        但本地存了 {imageDatName}_hd.hevc 裸流。本方法用 ffmpeg 解码，取内容最
+        丰富的帧（HEVC 静态图首帧常为空白占位）转成 JPG，让 describe_images 能识别。
+
+        路径推断：{CipherTalkData}/Images/{chatroom}/YYYY-MM/{dat}_hd.hevc
+
+        没装 ffmpeg / 路径不存在 / 转码失败 → 返回 None（静默跳过，不影响主流程）。
+        """
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg or not (image_dat_name and create_time and self._last_chatroom_id):
+            return None
+
+        # CipherTalkData 根：默认 ~/Documents/CipherTalkData（可按需改成配置项）
+        data_root = self._ciphertalk_data_root or str(
+            Path.home() / "Documents" / "CipherTalkData")
+        try:
+            month = datetime.fromtimestamp(int(create_time)).strftime("%Y-%m")
+        except (TypeError, ValueError, OSError):
+            return None
+
+        hevc_path = (Path(data_root) / "Images" / self._last_chatroom_id
+                     / month / f"{image_dat_name}_hd.hevc")
+        if not hevc_path.exists():
+            return None
+
+        out_dir = (Path(media_export_path) if media_export_path
+                   else Path(tempfile.gettempdir()))
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_jpg = out_dir / f"{image_dat_name}_hd.jpg"
+
+        # 解全部帧，取文件最大（内容最丰富）的一帧
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                subprocess.run(
+                    [ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
+                     "-f", "hevc", "-i", str(hevc_path),
+                     "-vsync", "0", str(Path(td) / "f_%03d.jpg")],
+                    capture_output=True, timeout=30,
+                )
+                frames = sorted(glob.glob(str(Path(td) / "f_*.jpg")))
+                if not frames:
+                    return None
+                shutil.copy2(max(frames, key=os.path.getsize), out_jpg)
+        except Exception:
+            return None
+
+        return str(out_jpg)
 
 
 if __name__ == "__main__":
