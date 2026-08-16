@@ -1,9 +1,9 @@
 <p align="center"><b>Quick Img</b></p>
-<p align="center">快速图片生成技能 — 提示词直出、文档转信息图、批量抽卡</p>
+<p align="center">快速图片生成技能 — 提示词直出、文档转信息图、批量抽卡、网络搜索补参考图</p>
 <p align="center">
   <a href="https://www.dmxapi.cn"><img src="https://img.shields.io/badge/API-DMX-blue"></a>
-  <img src="https://img.shields.io/badge/Model-Gemini_3.1_Flash_Image_Preview-green">
-  <img src="https://img.shields.io/badge/Claude_Code-Skill-purple">
+  <img src="https://img.shields.io/badge/Model-Gemini_3.1_Flash_Image-green">
+  <img src="https://img.shields.io/badge/OpenClaw-Skill-purple">
 </p>
 
 ---
@@ -12,13 +12,13 @@
 
 | Feature | Benefit |
 |---------|---------|
-| 3 种使用模式 | Direct Prompt / Template / Refine，按需选择 |
+| 2 种使用模式 | Direct Prompt / Template，按需选择 |
+| 网络搜索补参考图 | `--google-search` / `--image-search` 自动获取参考，模型自主构图 |
 | 14 种宽高比 | 覆盖小红书、Instagram、PPT 等场景 |
+| 4 档分辨率 | 0.5K 快速预览到 4K 印刷品质 |
 | 批量抽卡 | 同一 prompt 生成多张，API 随机产出不同结果 |
+| 透明背景 | `--transparent` 请求透明背景输出 |
 | 思源笔记集成 | 直接用笔记内容作为 prompt 生图 |
-| 精炼模式 | 长内容先提炼，展示确认后再生成 |
-
----
 
 ## Quick Start
 
@@ -28,6 +28,7 @@
 # From monorepo (recommended)
 git clone https://github.com/zenthos-z/my-skills.git
 cp -r my-skills/quick-img ~/.claude/skills/
+# 或 OpenClaw 环境：放入 skills/ 目录
 ```
 
 ### 2. Configure
@@ -49,15 +50,18 @@ python scripts/generate_image.py --input report.md --ratio 4:5 --size 2K
 
 # Batch（抽卡 3 张）
 python scripts/generate_image.py --prompt "landscape" --count 3
+
+# 启用网络搜索（自动补参考图）
+python scripts/generate_image.py --prompt "futuristic city" --google-search --image-search
 ```
 
 ---
 
-## Three Modes
+## Two Modes
 
 ### Mode 1: Direct Prompt（默认）
 
-直接输入提示词生图。
+直接输入提示词生图。有知识内容但不确定如何构图时，配合 `--google-search` / `--image-search` 让模型自动搜索参考图、自主构思画面结构。
 
 ```bash
 python scripts/generate_image.py --prompt "futuristic city" --ratio 16:9 --size 2K
@@ -70,10 +74,6 @@ python scripts/generate_image.py --prompt "futuristic city" --ratio 16:9 --size 
 ```bash
 python scripts/generate_image.py --input article.md --ratio 4:5 --size 2K
 ```
-
-### Mode 3: Refine（精炼后生图）
-
-长内容先提炼 → 展示精炼结果 → 确认后生成。Claude 行为层处理。
 
 ---
 
@@ -96,6 +96,8 @@ python scripts/generate_image.py --prompt "same prompt" --count 3
 | 16:9 | PPT cover, video thumbnail |
 | 9:16 | Phone wallpaper, Stories |
 | 4:3 | Document illustration |
+
+完整 14 种宽高比见 `assets/config.json`。
 
 ---
 
@@ -122,9 +124,10 @@ Mode:
 
 Image:
   --ratio RATIO             Aspect ratio (default: 4:5)
-  --size SIZE               Resolution (default: 2K)
+  --size SIZE               Resolution (default: 1K)
   --image-search            Enable image search
   --google-search           Enable Google search
+  --transparent             Request transparent background
 
 Batch:
   --count N, -n             Number of images (default: 1)
@@ -157,13 +160,15 @@ Custom templates: Create .txt files in assets/templates/, use {{content}} as pla
 |------------|------------|
 | Chinese prompts may produce lower quality | Use English for key concepts |
 | 2K/4K generation takes 10-30s | Use 1K for quick preview |
+| 精确文字渲染/密集文字场景表现一般 | 需要精确文字时改用 gpt-image-2 类模型 |
 
 ---
 
-## Claude Integration
+## OpenClaw Integration
 
 When user says "generate an image":
 - Direct prompt → `python scripts/generate_image.py --prompt "..." --ratio X --size Y`
 - File → `python scripts/generate_image.py --input <path> --ratio 4:5 --size 2K`
 - Batch → `python scripts/generate_image.py --prompt "..." --count 3`
-- Long content → Refine first, confirm, then generate
+- 需要参考图 → 加 `--google-search --image-search`
+- 需要透明底 → 加 `--transparent`

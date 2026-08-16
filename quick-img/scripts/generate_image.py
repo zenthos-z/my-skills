@@ -177,6 +177,7 @@ def call_dmx_api(
     image_size: str = "1K",
     image_search: bool = False,
     google_search: bool = False,
+    transparent: bool = False,
     config: dict = None
 ) -> bytes:
     """调用 DMX API 生成图片"""
@@ -207,6 +208,10 @@ def call_dmx_api(
     # 添加 image_size 配置（如果支持）
     if image_size != "1K":
         data["generationConfig"]["imageConfig"]["imageSize"] = image_size
+
+    # 透明背景（如果支持）
+    if transparent:
+        data["generationConfig"]["imageConfig"]["transparency"] = "TRANSPARENT"
 
     # 添加 tools 配置（搜索功能）
     tools = []
@@ -305,6 +310,8 @@ def main():
                        help="分辨率 (默认: 1K，可选: 0.5K, 1K, 2K, 4K)")
     parser.add_argument("--image-search", action="store_true",
                        help="启用 Image Search 图片搜索功能（让模型参考真实图片生成）")
+    parser.add_argument("--transparent", action="store_true",
+                       help="请求透明背景输出（imageConfig.transparency=TRANSPARENT）")
     parser.add_argument("--google-search", action="store_true",
                        help="启用 Google 搜索工具（使用实时信息生成图像）")
 
@@ -519,6 +526,7 @@ def main():
                 image_size=image_size,
                 image_search=image_search,
                 google_search=google_search,
+                transparent=args.transparent,
                 config=config
             )
 
